@@ -6,3 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+infer = "0.15.0"
+dbus = "0.9.7"
+gtk4-layer-shell = "0.2.0"
+clap = "4.4.9"
