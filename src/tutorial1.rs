@@ -1,17 +1,8 @@
 use gstreamer::prelude::*;
-use gstreamer::{Bin, ClockTime, ElementFactory, Pipeline, State};
-use gstreamer_video as gst_video;
-use gtk4;
-use gtk4::prelude::*;
-use gtk4::{gdk, gio, glib, Application, ApplicationWindow, Orientation, Picture};
-use gtk4::{Video, Window};
-use std::cell::RefCell;
-mod video_player_window;
 use gstreamer::MessageView;
-use video_player_window::VideoPlayerWindow;
+use gstreamer::{ClockTime, Pipeline, State};
 
-mod tutorial1;
-fn tutorial1() {
+pub fn tutorial1() {
     gstreamer::init().unwrap();
 
     let pipeline: Pipeline =
@@ -46,5 +37,3 @@ fn tutorial1() {
         };
     }
 }
-
-fn main() {}
