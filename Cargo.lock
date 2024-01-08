@@ -1127,6 +1127,8 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "dbus",
+ "gio",
+ "glib",
  "gst-plugin-gtk4",
  "gstreamer",
  "gstreamer-video",
