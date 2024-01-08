@@ -14,32 +14,13 @@ fn create_ui(app: &gtk4::Application) {
 
     let pipeline = gstreamer::Pipeline::new();
 
-    // let overlay = gstreamer::ElementFactory::make("clockoverlay")
-    //     .property("font-desc", "Monospace 42")
-    //     .build()
-    //     .unwrap();
-
     let gtksink = gstreamer::ElementFactory::make("gtk4paintablesink")
         .build()
         .unwrap();
 
     let paintable = gtksink.property::<gdk::Paintable>("paintable");
 
-    // TODO: future plans to provide a bin-like element that works with less setup
-    let (src, sink) = if paintable
-        .property::<Option<gdk::GLContext>>("gl-context")
-        .is_some()
-    {
-        let src = gstreamer::ElementFactory::make("gltestsrc")
-            .build()
-            .unwrap();
-
-        let sink = gstreamer::ElementFactory::make("glsinkbin")
-            .property("sink", &gtksink)
-            .build()
-            .unwrap();
-        (src, sink)
-    } else {
+    let (src, sink) = {
         println!("dogggg");
         let src = gstreamer::ElementFactory::make("videotestsrc")
             .build()
@@ -62,17 +43,14 @@ fn create_ui(app: &gtk4::Application) {
         (src, sink.upcast())
     };
 
-    // pipeline.add_many([&src, &overlay, &sink]).unwrap();
     pipeline.add_many([&src, &sink]).unwrap();
     Element::link_many([&src, &sink]).unwrap();
-    // src.link_filtered(&overlay, &caps).unwrap();
-    // overlay.link(&sink).unwrap();
 
     picture.set_paintable(Some(&paintable));
     vbox.append(&picture);
 
     window.set_child(Some(&vbox));
-    window.show();
+    window.present();
 
     app.add_window(&window);
 
