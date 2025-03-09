@@ -1,3 +1,8 @@
+mod parser;
+
+fn main() {
+    parser::parse();
+}
 // use gstreamer::prelude::*;
 // use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pipeline, State};
 // use gstreamer_video;
