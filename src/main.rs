@@ -1,6 +1,7 @@
 mod parser;
 
 fn main() {
+    //let a: Vec<String> = std::env::args().collect();
     //parser::parse();
 }
 // use gstreamer::prelude::*;

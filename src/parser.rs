@@ -1,8 +1,8 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{builder::EnumValueParser, Args, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
-#[command(name = "example")]
-struct Cli {
+#[command(name = "sheila")]
+pub(crate) struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
@@ -17,8 +17,9 @@ enum Commands {
 
 #[derive(Debug, Args)]
 struct ServerArgs {
-    #[arg(short, long)]
-    port: u16,
+    // https://stackoverflow.com/questions/76341332/clap-default-value-for-pathbuf
+    #[arg(short, long, default_value = "/tmp/shiela.socket")]
+    socket: String,
 }
 
 #[derive(Debug, Args)]
@@ -27,30 +28,39 @@ struct ClientArgs {
     socket: String,
 }
 
-pub(crate) fn parse(args: String) {
-    let tokens = args.split_whitespace();
+pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::error::Error>{
     //let args = Cli::try_parse_from(["example", "server", "--port", "8080"]);
-    let args = Cli::try_parse_from(tokens);
-    match args {
-        Ok(cli) => {
-            match cli.command {
-                Commands::Server(server_args) => {
-                    println!("Running server on port: {}", server_args.port);
-                }
-                Commands::Client(client_args) => {
-                    println!("Connecting to socket: {}", client_args.socket);
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("Error parsing arguments: {}", e);
-        }
-    }
+    let args = Cli::try_parse_from(args);
+    return args;
+    // match args {
+    //     Ok(cli) => {
+    //         match cli.command {
+    //             Commands::Server(server_args) => {
+    //                 println!("Running server on port: {}", server_args.port);
+    //             }
+    //             Commands::Client(client_args) => {
+    //                 println!("Connecting to socket: {}", client_args.socket);
+    //             }
+    //         }
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Error parsing arguments: {}", e);
+    //     }
+    // }
 }
 
 #[test]
 fn test_parse() {
-    parse("example server --port 8080".to_string());
+    let args: Vec<String> = vec!["sheila", "server"].into_iter().map(String::from).collect();
+    let actual = parse(args);
+    match actual {
+        Ok(re) => {
+            println!("{:?}", re);
+        }
+        Err(e) => {
+            eprintln!("{:?}", e);
+        }
+    }
 }
 // use clap::{Args, Parser, Subcommand};
 
