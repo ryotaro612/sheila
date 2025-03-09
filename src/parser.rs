@@ -27,8 +27,10 @@ struct ClientArgs {
     socket: String,
 }
 
-pub(crate) fn parse() {
-    let args = Cli::try_parse_from(["example", "server", "--port", "8080"]);
+pub(crate) fn parse(args: String) {
+    let tokens = args.split_whitespace();
+    //let args = Cli::try_parse_from(["example", "server", "--port", "8080"]);
+    let args = Cli::try_parse_from(tokens);
     match args {
         Ok(cli) => {
             match cli.command {
@@ -48,7 +50,7 @@ pub(crate) fn parse() {
 
 #[test]
 fn test_parse() {
-    parse();
+    parse("example server --port 8080".to_string());
 }
 // use clap::{Args, Parser, Subcommand};
 

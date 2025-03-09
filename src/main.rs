@@ -1,7 +1,7 @@
 mod parser;
 
 fn main() {
-    parser::parse();
+    //parser::parse();
 }
 // use gstreamer::prelude::*;
 // use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pipeline, State};
