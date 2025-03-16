@@ -1,24 +1,34 @@
 use serde;
+use uuid::Uuid;
 use serde_json::json;
 use std::io;
 
 use crate::parser::{ClientSubCommands, DisplayArgs};
 
-pub(crate) fn run(socket: String, args: crate::parser::ClientArgs) -> io::Result<()> {
-    match args.command {
-        ClientSubCommands::Display(a) => {
-            a.file;
-            Ok(())
-        }
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-struct DisplayRequest {
+struct MethodParms {
     method: String,
+    params: serde_json::Value,
 }
 
-fn make_request(id: String, method: String, params: serde_json::Value) -> serde_json::Value {
+pub(crate) fn run(socket: String, args: crate::parser::ClientArgs) -> std::result::Result<(), String> {
+    let method_params        =   match args.command {
+        ClientSubCommands::Display(a) => {
+            let value = json!({"file": a.file});
+            let m = MethodParms{method: String::from("display"), params: value};
+            Ok(("display", value))
+        }
+        _ => {
+            Err(String::from("Not implemented"))
+        }
+    }?;
+
+    let id = Uuid::new_v4().to_string();
+    let request = make_request(id, method_params.0, method_params.1);
+    Ok(())
+}
+
+
+fn make_request(id: String, method: &str, params: serde_json::Value) -> serde_json::Value {
     json!({
         "jsonrpc": "2.0",
         "method": method,
