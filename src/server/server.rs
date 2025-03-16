@@ -26,7 +26,7 @@ struct Response {
 }
 
 impl <H: handler::Handler> Server<H> {
-    fn new(socket: String, handler: H) -> Self {
+    pub(crate) fn new(socket: String, handler: H) -> Self {
         return Server { socket, handler };
     }
     fn handle(&self, request: String)-> Response{
@@ -34,7 +34,7 @@ impl <H: handler::Handler> Server<H> {
         Response{is_stop_request: false, response: v.unwrap()}
     }
 
-    fn start(&self) -> result::Result<(), io::Error> {
+    pub(crate) fn start(&self) -> result::Result<(), io::Error> {
         let listener = self.bind()?;
         let mut result: Result<(), io::Error> = Ok(());
         for stream in listener.incoming() {
@@ -102,7 +102,15 @@ impl <H: handler::Handler> Server<H> {
     }
 }
 
-struct Server<H:handler::Handler>  {
+pub(crate) struct Server<H:handler::Handler>  {
     socket: String,
     handler: H,
 }
+
+// #[test]
+// fn test_handle() {
+//     let server = Server::new("".to_string(), handler::Handler{});
+//     let response = server.handle(r#"{"jsonrpc": "2.0", "method": "stop", "id": "doge"}"#.to_string());
+//     assert_eq!(response.is_stop_request, true);
+//     assert_eq!(response.response, serde_json::json!({"jsonrpc": "2.0", "result": "ok", "id": "doge"}));
+// }

@@ -12,32 +12,14 @@ fn main() {
 
     logger::init_log(cli.verbose);
 
-    let result = match cli.command {
-        parser::Commands::Server(server_args) => server::run(cli.socket, server_args),
+    match cli.command {
+        parser::Commands::Server => server::run(cli.socket),
         parser::Commands::Client(client_args) => client::run(cli.socket, client_args.command),
-    };
-    match result {
-        Ok(_) => {
-            log::debug!("terminate");
-            // nop
-        }
-        Err(e) => {
+    }.unwrap_or_else(|e|{
             log::error!("error: {e}");
             process::exit(1);
-        }
-    }
+    });
 
-    // match result {
-    //     Ok(cli) => {
-    //     }
-    //     Err(e) => {
-    //         eprintln!("Error parsing arguments: {}", e);
-    //         //std::process.exit(1)
-    //     }
-    // }
-
-    //let a: Vec<String> = std::env::args().collect();
-    //parser::parse();
 }
 // use gstreamer::prelude::*;
 // use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pipeline, State};

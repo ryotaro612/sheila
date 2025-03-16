@@ -19,16 +19,11 @@ pub(crate) struct Cli {
 #[derive(Debug, Subcommand)]
 pub(crate) enum Commands {
     #[command(about = "Run the server")]
-    Server(ServerArgs),
+    Server,
     #[command(about = "Run the client")]
     Client(ClientArgs),
 }
 
-#[derive(Debug, Args)]
-pub(crate) struct ServerArgs {
-    // #[arg(short, long, default_value = get_default_log_path())]
-    // socket: String,
-}
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum ClientSubCommands {
