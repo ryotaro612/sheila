@@ -6,8 +6,9 @@ use std::result;
 use std::io;
 
 pub(crate) trait Client {
-     fn send(&self, id:String, method: &str, params: serde_json::Value) -> result::Result<(), io::Error>;
-     fn send_method(&self, id:String, method: &str) -> result::Result<(), io::Error>;
+     fn send(&self, id:String, method: &str, params: serde_json::Value) -> result::Result<serde_json::Value, io::Error>;
+     fn send_method(&self, id:String, method: &str) -> result::Result<serde_json::Value, io::Error>;
+
 }
 
 pub(crate) struct SocketClient {
@@ -15,7 +16,7 @@ pub(crate) struct SocketClient {
 }
 
 impl Client for SocketClient {
-    fn send(&self, id: String, method: &str, params: serde_json::Value) -> result::Result<(), io::Error> {
+    fn send(&self, id: String, method: &str, params: serde_json::Value) -> result::Result<serde_json::Value, io::Error> {
         let mut stream = std::os::unix::net::UnixStream::connect(&self.socket)?;
 
         let request  =json!({
@@ -24,16 +25,10 @@ impl Client for SocketClient {
             "params": params,
             "id": id, });
 
-        stream.write_all(request.to_string().as_bytes())?;
-        stream.shutdown(net::Shutdown::Write)?;
-        // stream.read_timeout();
-        let mut message = String::new();
-        stream.read_to_string(&mut message);
-        println!("{message}");
-        Ok(())
+        self.request(request)
     }
 
-     fn send_method(&self, id:String, method: &str) -> result::Result<(), io::Error> {
+     fn send_method(&self, id:String, method: &str) -> result::Result<serde_json::Value, io::Error> {
         let mut stream = std::os::unix::net::UnixStream::connect(&self.socket)?;
 
         let request  =json!({
@@ -41,14 +36,11 @@ impl Client for SocketClient {
             "method": method,
             "id": id, });
 
-        stream.write_all(request.to_string().as_bytes())?;
-        stream.shutdown(net::Shutdown::Write)?;
-        // stream.read_timeout();
-        let mut message = String::new();
-        stream.read_to_string(&mut message);
-        println!("{message}");
-        Ok(())
+        self.request(request)
      }
+
+
+
 }
 
 impl SocketClient {
@@ -57,7 +49,18 @@ impl SocketClient {
         SocketClient {
             socket: socket.clone(),
         }
+
     }
+     fn request(&self, payload: serde_json::Value) -> result::Result<serde_json::Value, io::Error>  {
+        let mut stream = std::os::unix::net::UnixStream::connect(&self.socket)?;
+        stream.write_all(payload.to_string().as_bytes())?;
+        stream.shutdown(net::Shutdown::Both)?;
+        // stream.read_timeout();
+        let mut message = String::new();
+        stream.read_to_string(&mut message)?;
+        let v: serde_json::Value = serde_json::from_str(&message)?;
+        Ok(v)
+     }
 }
 
 
