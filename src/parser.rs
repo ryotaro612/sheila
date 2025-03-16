@@ -30,27 +30,29 @@ pub(crate) struct ServerArgs {
     // socket: String,
 }
 
-#[derive(Debug, Args)]
-pub(crate) struct ClientArgs {}
+#[derive(Debug, Subcommand)]
+pub(crate) enum ClientSubCommands {
+    #[command(about = "Display")]
+    Display(DisplayArgs),
+}
 
+#[derive(Debug, Args)]
+pub(crate) struct ClientArgs {
+    #[command(subcommand)]
+    pub(crate) command: ClientSubCommands,
+}
+
+#[derive(Debug, Args)]
+pub(crate) struct DisplayArgs {
+    // #[arg(short, long, default_value = get_default_log_path())]
+    // socket: String,
+}
+
+/**
+ * Parses the command line arguments.
+ */
 pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::error::Error> {
-    //let args = Cli::try_parse_from(["example", "server", "--port", "8080"]);
     Cli::try_parse_from(args)
-    // match args {
-    //     Ok(cli) => {
-    //         match cli.command {
-    //             Commands::Server(server_args) => {
-    //                 println!("Running server on port: {}", server_args.port);
-    //             }
-    //             Commands::Client(client_args) => {
-    //                 println!("Connecting to socket: {}", client_args.socket);
-    //             }
-    //         }
-    //     }
-    //     Err(e) => {
-    //         eprintln!("Error parsing arguments: {}", e);
-    //     }
-    // }
 }
 /**
  * Defines the default socket file path.
@@ -82,13 +84,37 @@ fn test_default_socket_file_is_defined() {
 #[test]
 fn test_verbose_option_is_available() {
     // arrange
-    let args: Vec<String> = vec!["sheila", "--verbose", "client"]
+    let args: Vec<String> = vec!["sheila", "--verbose", "server"]
         .into_iter()
         .map(String::from)
         .collect();
 
     // actual
     let actual = parse(args).unwrap();
+
+    assert!(actual.verbose);
+}
+
+#[test]
+fn client_has_display_subcommand() {
+    let args: Vec<String> = vec!["sheila", "--verbose", "client", "display"]
+        .into_iter()
+        .map(String::from)
+        .collect();
+
+    // actual
+    let actual = parse(args).unwrap();
+
+    match actual.command {
+        Commands::Client(client_args) => {
+            match client_args.command {
+                ClientSubCommands::Display(_) => {
+                    // nop
+                }
+            }
+        }
+        _ => panic!("unexpected command"),
+    }
 
     assert!(actual.verbose);
 }
