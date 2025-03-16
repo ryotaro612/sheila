@@ -44,8 +44,8 @@ pub(crate) struct ClientArgs {
 
 #[derive(Debug, Args)]
 pub(crate) struct DisplayArgs {
-    // #[arg(short, long, default_value = get_default_log_path())]
-    // socket: String,
+    #[arg()]
+    file: String,
 }
 
 /**
@@ -97,7 +97,7 @@ fn test_verbose_option_is_available() {
 
 #[test]
 fn client_has_display_subcommand() {
-    let args: Vec<String> = vec!["sheila", "--verbose", "client", "display"]
+    let args: Vec<String> = vec!["sheila", "--verbose", "client", "display", "image.png"]
         .into_iter()
         .map(String::from)
         .collect();
@@ -108,8 +108,8 @@ fn client_has_display_subcommand() {
     match actual.command {
         Commands::Client(client_args) => {
             match client_args.command {
-                ClientSubCommands::Display(_) => {
-                    // nop
+                ClientSubCommands::Display(args) => {
+                    assert_eq!("image.png", args.file);
                 }
             }
         }
