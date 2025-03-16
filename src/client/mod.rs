@@ -6,13 +6,39 @@ use std::net;
 use std::io::Write;
 use std::result;
 
-use crate::parser::{ClientSubCommands, DisplayArgs};
+use crate::parser::{Cli, ClientSubCommands, DisplayArgs};
 
 
 pub(crate) fn run(socket: String, args: crate::parser::ClientSubCommands) -> std::result::Result<(), String> {
-    let id = Uuid::new_v4().to_string();
-    let request = make_request(id, args)?;
+
+    match args {
+       ClientSubCommands::Display(a) => {
+        display(socket, a)
+       } 
+       ClientSubCommands::Stop => {
+        stop()
+       }
+    }
+
+}
+
+fn generate_id() -> String { 
+Uuid::new_v4().to_string()
+}
+
+fn display(socket: String, a: DisplayArgs) -> result::Result<(), String> {
+    let id = generate_id();
+   let request  =json!({
+        "jsonrpc": "2.0",
+        "method": "display",
+        "params": {
+            "file": a.file
+        },
+        "id": id, });
     send(socket, request).map_err(|e| e.to_string())
+}
+fn stop() -> result::Result<(), String> {
+    Ok(())
 }
 
 fn send(socket: String, request: serde_json::Value) -> result::Result<(), io::Error> {
@@ -37,37 +63,40 @@ fn send(socket: String, request: serde_json::Value) -> result::Result<(), io::Er
 // }
 
 
-fn make_request(id: String, args: crate::parser::ClientSubCommands) -> result::Result<serde_json::Value, String> {
-    let method_params        =   match args {
-        ClientSubCommands::Display(a) => {
-            let value = json!({"file": a.file});
-            let res: Result<(&str, serde_json::Value), String>  = Ok(("display", value));
-            res
-        }
-    }?;
+// fn make_request(id: String, args: crate::parser::ClientSubCommands) -> result::Result<serde_json::Value, String> {
+//     match args {
+//         ClientSubCommands::Display(a) => {
+//             let value = json!({"file": a.file});
+//             let res: Result<(&str, serde_json::Value), String>  = ;
+// Ok(json!({
+//         "jsonrpc": "2.0",
+//         "method": method,
+//         "params": method_params.1,
+//         "id": id, }))
+//         }
+//         ClientSubCommands::Stop => {
 
-    Ok(json!({
-        "jsonrpc": "2.0",
-        "method": method_params.0,
-        "params": method_params.1,
-        "id": id, }))
-}
+//         }
+//     }?;
 
-#[test]
-fn test_display_request_can_be_represented_as_json_rpc_requet() {
-    // arrange
-    let args = DisplayArgs {
-        file: String::from("image_file"),
-    };
+    
+// }
 
-    // actual
-    let actual =  make_request(
-        String::from("1"),
-        ClientSubCommands::Display(args),
-    );
+// #[test]
+// fn test_display_request_can_be_represented_as_json_rpc_requet() {
+//     // arrange
+//     let args = DisplayArgs {
+//         file: String::from("image_file"),
+//     };
 
-    // assert
-    let expected = json!({ "jsonrpc":"2.0", "id": "1",  "method":"display","params":{"file":"image_file"}});
+//     // actual
+//     let actual =  make_request(
+//         String::from("1"),
+//         ClientSubCommands::Display(args),
+//     );
 
-    assert_eq!(expected, actual.unwrap());
-}
+//     // assert
+//     let expected = json!({ "jsonrpc":"2.0", "id": "1",  "method":"display","params":{"file":"image_file"}});
+
+//     assert_eq!(expected, actual.unwrap());
+// }

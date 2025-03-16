@@ -34,6 +34,7 @@ pub(crate) struct ServerArgs {
 pub(crate) enum ClientSubCommands {
     #[command(about = "Display")]
     Display(DisplayArgs),
+    Stop,
 }
 
 #[derive(Debug, Args)]
@@ -110,6 +111,7 @@ fn test_client_has_display_subcommand() {
             ClientSubCommands::Display(args) => {
                 assert_eq!("image.png", args.file);
             }
+            _ => panic!("unexpected subcommand")
         },
         _ => panic!("unexpected command"),
     }
