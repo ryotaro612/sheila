@@ -45,7 +45,7 @@ pub(crate) struct ClientArgs {
 #[derive(Debug, Args)]
 pub(crate) struct DisplayArgs {
     #[arg()]
-    file: String,
+    pub(crate) file: String,
 }
 
 /**
@@ -96,7 +96,7 @@ fn test_verbose_option_is_available() {
 }
 
 #[test]
-fn client_has_display_subcommand() {
+fn test_client_has_display_subcommand() {
     let args: Vec<String> = vec!["sheila", "--verbose", "client", "display", "image.png"]
         .into_iter()
         .map(String::from)
@@ -106,13 +106,11 @@ fn client_has_display_subcommand() {
     let actual = parse(args).unwrap();
 
     match actual.command {
-        Commands::Client(client_args) => {
-            match client_args.command {
-                ClientSubCommands::Display(args) => {
-                    assert_eq!("image.png", args.file);
-                }
+        Commands::Client(client_args) => match client_args.command {
+            ClientSubCommands::Display(args) => {
+                assert_eq!("image.png", args.file);
             }
-        }
+        },
         _ => panic!("unexpected command"),
     }
 
