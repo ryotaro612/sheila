@@ -14,7 +14,7 @@ fn main() {
 
     let result = match cli.command {
         parser::Commands::Server(server_args) => server::run(cli.socket, server_args),
-        parser::Commands::Client(client_args) => client::run(cli.socket, client_args),
+        parser::Commands::Client(client_args) => client::run(cli.socket, client_args.command),
     };
     match result {
         Ok(_) => {
