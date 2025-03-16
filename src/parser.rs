@@ -1,10 +1,15 @@
-use clap::{builder::EnumValueParser, Args, Parser, Subcommand};
+use std::{ffi::OsString, path::PathBuf};
+
+use clap::{builder::{EnumValueParser, OsStr}, Args, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(name = "sheila")]
 pub(crate) struct Cli {
     #[command(subcommand)]
     command: Commands,
+
+    // #[arg(global=true)]  // <-- here
+    // file: Option<String>
 }
 
 #[derive(Debug, Subcommand)]
@@ -18,7 +23,7 @@ enum Commands {
 #[derive(Debug, Args)]
 struct ServerArgs {
     // https://stackoverflow.com/questions/76341332/clap-default-value-for-pathbuf
-    #[arg(short, long, default_value = "/tmp/shiela.socket")]
+    #[arg(short, long, default_value = get_default_log_path())]
     socket: String,
 }
 
@@ -26,6 +31,12 @@ struct ServerArgs {
 struct ClientArgs {
     #[arg(short, long)]
     socket: String,
+}
+
+fn get_default_log_path() -> OsString {
+    let mut  a = std::env::temp_dir();
+    a.push("sheila.socket");
+    a.into_os_string()
 }
 
 pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::error::Error>{
@@ -50,15 +61,29 @@ pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::error::Error>{
 }
 
 #[test]
-fn test_parse() {
+fn test_default_socket_file_is_defined() {
+    // arrange
     let args: Vec<String> = vec!["sheila", "server"].into_iter().map(String::from).collect();
+
+    // actual
     let actual = parse(args);
+
+    // assert 
     match actual {
-        Ok(re) => {
-            println!("{:?}", re);
+        Ok(c) => {
+            match c.command {
+                Commands::Server(server_args) => {
+                    let mut dir = std::env::temp_dir();
+                    dir.push("sheila.socket");
+                    assert_eq!(server_args.socket, dir.to_str().unwrap());
+                }
+                _ => {
+                    assert!(false, "the expected subcommand is server.");
+                }
+            }
         }
         Err(e) => {
-            eprintln!("{:?}", e);
+            assert!(false, "Error parsing arguments: {}", e);
         }
     }
 }
