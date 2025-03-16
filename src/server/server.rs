@@ -50,6 +50,7 @@ impl <H: handler::Handler> Server<H> {
                                 log::error!("error writing to a stream: {e}");
                             });
                             if response.is_stop_request {
+                                self.shutdown(&s);
                                 break;
                             }
                         }
@@ -59,16 +60,14 @@ impl <H: handler::Handler> Server<H> {
                                 "jsonrpc": "2.0",
                                 "error": {
                                     "code": -32700,
-                                    "message": "failed to read the payload",
+                                    "message": "failed to read a request",
                                 }
                             }).to_string().as_bytes()).unwrap_or_else(|e|{
                                 log::error!("error writing to a stream: {e}");
                             });
                         }
                     }
-                    s.shutdown(std::net::Shutdown::Write).unwrap_or_else(|e|{
-                        log::error!("error shutting down the stream: {e}");
-                    });
+                    self.shutdown(&s);
                 }
                 Err(err) => {
                     log::error!("error accepting a stream: {err}");
@@ -78,6 +77,11 @@ impl <H: handler::Handler> Server<H> {
             };
         }
         result
+    }
+    fn shutdown(&self,  stream: &net::UnixStream) {
+                    stream.shutdown(std::net::Shutdown::Write).unwrap_or_else(|e|{
+                        log::error!("error shutting down the stream: {e}");
+                    });
     }
 
     fn bind(&self) -> result::Result<net::UnixListener, io::Error> {
