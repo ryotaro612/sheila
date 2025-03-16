@@ -1,6 +1,6 @@
 use std::result;
-mod server;
 mod handler;
+mod server;
 
 // sync=false is required playbin
 
@@ -9,9 +9,7 @@ mod handler;
 */
 pub(crate) fn run(socket: String) -> result::Result<(), String> {
     let server = server::Server::new(socket, handler::DefaultHandler::new());
-    server.start().map_err(|e| {
-        e.to_string()
-    })
+    server.start().map_err(|e| e.to_string())
 }
 
 // struct Response {

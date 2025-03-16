@@ -24,7 +24,6 @@ pub(crate) enum Commands {
     Client(ClientArgs),
 }
 
-
 #[derive(Debug, Subcommand)]
 pub(crate) enum ClientSubCommands {
     #[command(about = "Display")]

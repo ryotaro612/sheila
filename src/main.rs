@@ -15,11 +15,11 @@ fn main() {
     match cli.command {
         parser::Commands::Server => server::run(cli.socket),
         parser::Commands::Client(client_args) => client::run(cli.socket, client_args.command),
-    }.unwrap_or_else(|e|{
-            log::error!("error: {e}");
-            process::exit(1);
+    }
+    .unwrap_or_else(|e| {
+        log::error!("error: {e}");
+        process::exit(1);
     });
-
 }
 // use gstreamer::prelude::*;
 // use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pipeline, State};

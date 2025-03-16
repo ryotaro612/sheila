@@ -10,12 +10,10 @@ impl Handler for DefaultHandler {
     }
 }
 
- impl DefaultHandler {
+impl DefaultHandler {
     pub(crate) fn new() -> Self {
         DefaultHandler {}
     }
 }
 
- pub(crate) struct DefaultHandler {
-
-}
+pub(crate) struct DefaultHandler {}
