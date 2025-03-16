@@ -1,14 +1,19 @@
-use std::io::Read;
 use serde_json::json;
+use std::io;
+use std::io::Read;
 use std::io::Write;
 use std::net;
 use std::result;
-use std::io;
 
 pub(crate) trait Client {
-     fn send(&self, id:String, method: &str, params: serde_json::Value) -> result::Result<serde_json::Value, io::Error>;
-     fn send_method(&self, id:String, method: &str) -> result::Result<serde_json::Value, io::Error>;
-
+    fn send(
+        &self,
+        id: String,
+        method: &str,
+        params: serde_json::Value,
+    ) -> result::Result<serde_json::Value, io::Error>;
+    fn send_method(&self, id: String, method: &str)
+        -> result::Result<serde_json::Value, io::Error>;
 }
 
 pub(crate) struct SocketClient {
@@ -16,10 +21,13 @@ pub(crate) struct SocketClient {
 }
 
 impl Client for SocketClient {
-    fn send(&self, id: String, method: &str, params: serde_json::Value) -> result::Result<serde_json::Value, io::Error> {
-        let mut stream = std::os::unix::net::UnixStream::connect(&self.socket)?;
-
-        let request  =json!({
+    fn send(
+        &self,
+        id: String,
+        method: &str,
+        params: serde_json::Value,
+    ) -> result::Result<serde_json::Value, io::Error> {
+        let request = json!({
             "jsonrpc": "2.0",
             "method": method,
             "params": params,
@@ -28,41 +36,35 @@ impl Client for SocketClient {
         self.request(request)
     }
 
-     fn send_method(&self, id:String, method: &str) -> result::Result<serde_json::Value, io::Error> {
-        let mut stream = std::os::unix::net::UnixStream::connect(&self.socket)?;
-
-        let request  =json!({
+    fn send_method(
+        &self,
+        id: String,
+        method: &str,
+    ) -> result::Result<serde_json::Value, io::Error> {
+        let request = json!({
             "jsonrpc": "2.0",
             "method": method,
             "id": id, });
 
         self.request(request)
-     }
-
-
-
+    }
 }
 
 impl SocketClient {
-
-        pub(crate) fn new(socket: &String) -> Self {
+    pub(crate) fn new(socket: &String) -> Self {
         SocketClient {
             socket: socket.clone(),
         }
-
     }
-     fn request(&self, payload: serde_json::Value) -> result::Result<serde_json::Value, io::Error>  {
+    fn request(&self, payload: serde_json::Value) -> result::Result<serde_json::Value, io::Error> {
         let mut stream = std::os::unix::net::UnixStream::connect(&self.socket)?;
         stream.write_all(payload.to_string().as_bytes())?;
-        stream.shutdown(net::Shutdown::Both)?;
+        stream.shutdown(net::Shutdown::Write)?;
         // stream.read_timeout();
         let mut message = String::new();
         stream.read_to_string(&mut message)?;
         let v: serde_json::Value = serde_json::from_str(&message)?;
+        println!("{v}");
         Ok(v)
-     }
+    }
 }
-
-
-
-    

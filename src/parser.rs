@@ -111,7 +111,7 @@ fn test_client_has_display_subcommand() {
             ClientSubCommands::Display(args) => {
                 assert_eq!("image.png", args.file);
             }
-            _ => panic!("unexpected subcommand")
+            _ => panic!("unexpected subcommand"),
         },
         _ => panic!("unexpected command"),
     }
@@ -135,10 +135,8 @@ fn test_client_provides_stop_command() {
             ClientSubCommands::Stop => {
                 // nop
             }
-            _ => panic!("unexpected subcommand")
+            _ => panic!("unexpected subcommand"),
         },
         _ => panic!("unexpected command"),
     }
-
 }
-
