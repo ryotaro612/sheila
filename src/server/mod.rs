@@ -1,4 +1,6 @@
-use std::io::Read;
+use std::io::{Read, Write};
+use std::path;
+use std::fs;
 use std::{io, result};
 use std::os::unix::net::UnixListener;
 pub mod server;
@@ -9,7 +11,7 @@ pub mod server;
  *  Initialize the log system
 */
 pub(crate) fn run(socket: String, args: crate::parser::ServerArgs) -> result::Result<(), String> {
-    let listner = UnixListener::bind(socket).map_err(|e| e.to_string())?;
+    let listner = bind(socket)?;
 
     let mut result: Result<(), String> = Ok(());
     for stream in listner.incoming() {
@@ -36,4 +38,13 @@ pub(crate) fn run(socket: String, args: crate::parser::ServerArgs) -> result::Re
     result
 }
 
-
+/**
+ * Force to bind the socket.
+ * If a file exits at the path, it will be removed.
+ */
+fn bind(socket: String) -> result::Result<UnixListener, String>{
+    if path::Path::new(&socket).exists() {
+        fs::remove_file(&socket).map_err(|e| e.to_string())?;
+    }
+    UnixListener::bind(socket).map_err(|e| e.to_string())
+}
