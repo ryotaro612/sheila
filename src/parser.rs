@@ -118,3 +118,27 @@ fn test_client_has_display_subcommand() {
 
     assert!(actual.verbose);
 }
+
+#[test]
+fn test_client_provides_stop_command() {
+    // arrange
+    let args: Vec<String> = vec!["sheila", "client", "stop"]
+        .into_iter()
+        .map(String::from)
+        .collect();
+
+    // actual
+    let actual = parse(args);
+    // assert
+    match actual.unwrap().command {
+        Commands::Client(client_args) => match client_args.command {
+            ClientSubCommands::Stop => {
+                // nop
+            }
+            _ => panic!("unexpected subcommand")
+        },
+        _ => panic!("unexpected command"),
+    }
+
+}
+

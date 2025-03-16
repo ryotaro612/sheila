@@ -1,22 +1,26 @@
 use uuid::Uuid;
 use serde_json::json;
-use std::io;
+use std::{io, path::Path};
 use std::io::Read;
 use std::net;
 use std::io::Write;
 use std::result;
+mod client;
+use crate::client::client as sheila_client;
+
 
 use crate::parser::{Cli, ClientSubCommands, DisplayArgs};
 
 
 pub(crate) fn run(socket: String, args: crate::parser::ClientSubCommands) -> std::result::Result<(), String> {
-
+    let cli = crate::client::client::SocketClient::new(&socket);
+    let id = generate_id();
     match args {
        ClientSubCommands::Display(a) => {
-        display(socket, a)
+        display(&cli, id, a)
        } 
        ClientSubCommands::Stop => {
-        stop()
+        stop(&cli, id)
        }
     }
 
@@ -26,19 +30,16 @@ fn generate_id() -> String {
 Uuid::new_v4().to_string()
 }
 
-fn display(socket: String, a: DisplayArgs) -> result::Result<(), String> {
-    let id = generate_id();
-   let request  =json!({
-        "jsonrpc": "2.0",
-        "method": "display",
-        "params": {
-            "file": a.file
-        },
-        "id": id, });
-    send(socket, request).map_err(|e| e.to_string())
+fn display(cli: &impl sheila_client::Client, id: String,       a: DisplayArgs) -> result::Result<(), String> {
+    cli.send(id, "display", json!({"file": a.file})).map_err(|e| e.to_string())
 }
-fn stop() -> result::Result<(), String> {
-    Ok(())
+fn stop(cli: &impl sheila_client::Client, id: String) -> result::Result<(), String> {
+    cli.send_method(id, "stop").map_err(|e| e.to_string())
+    // client.send(json!({
+    //     "jsonrpc": "2.0",
+    //     "method": "stop",
+    //     "id": generate_id(),
+    // }))
 }
 
 fn send(socket: String, request: serde_json::Value) -> result::Result<(), io::Error> {
