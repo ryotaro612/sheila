@@ -1,12 +1,23 @@
-
 mod parser;
+mod log;
+mod server;
+mod client ;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     // https://docs.rs/clap/latest/clap/type.Error.html
-    let result = parser::parse(args).map_err(|err| err.exit()).unwrap();
+    let cli = parser::parse(args).map_err(|err| err.exit()).unwrap();
 
+    log::init_log(cli.verbose);
 
+    match cli.command {
+        parser::Commands::Server(server_args) => {
+            server::run(server_args);
+        }
+        parser::Commands::Client(client_args) => {
+            client::run(client_args);
+        }
+    }
     // match result {
     //     Ok(cli) => {
     //     }
@@ -15,9 +26,6 @@ fn main() {
     //         //std::process.exit(1)
     //     }
     // }
-
-    env_logger::init();
-
 
 
     //let a: Vec<String> = std::env::args().collect();

@@ -1,7 +1,6 @@
-use std::{ffi::OsString, path::PathBuf};
+use std::ffi::OsString;
 
 use clap::{
-    builder::{EnumValueParser, OsStr},
     Args, Parser, Subcommand,
 };
 
@@ -9,18 +8,18 @@ use clap::{
 #[command(name = "sheila")]
 pub(crate) struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    pub(crate) command: Commands,
 
     // https://stackoverflow.com/questions/76341332/clap-default-value-for-pathbuf
     #[arg(short, long, default_value = get_default_log_path())]
     socket: String,
     // https://poyo.hatenablog.jp/entry/2022/10/10/170000
      #[arg(short, long)]
-    verbose: bool,
+    pub(crate) verbose: bool,
 }
 
 #[derive(Debug, Subcommand)]
-enum Commands {
+pub(crate) enum Commands {
     #[command(about = "Run the server")]
     Server(ServerArgs),
     #[command(about = "Run the client")]
@@ -28,13 +27,13 @@ enum Commands {
 }
 
 #[derive(Debug, Args)]
-struct ServerArgs {
+pub(crate) struct ServerArgs {
     // #[arg(short, long, default_value = get_default_log_path())]
     // socket: String,
 }
 
 #[derive(Debug, Args)]
-struct ClientArgs {
+pub(crate) struct ClientArgs {
 
 }
 

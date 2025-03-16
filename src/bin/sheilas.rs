@@ -1,32 +1,31 @@
-use std::os::unix::net::UnixListener;
+use std::thread;
+
 use std::io::prelude::*;
-use std::fs;
-use std::env;
+use std::os::unix::net::{UnixStream, UnixListener};
+
+fn handle_client(mut stream: UnixStream)  {
+        let mut message = String::new();
+        let a = stream
+        .read_to_string(&mut message);
+    a.unwrap(); 
+    println!("{message}");
+    println!("{message}!!");
+    // ...
+}
+
 
 fn main() -> std::io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let verbose = args.contains(&String::from("--verbose"));
-
-    // Remove the socket file if it already exists
-    let _ = fs::remove_file("/home/ryotaro/a.socket");
-
+    // https://doc.rust-lang.org/std/os/unix/net/struct.UnixListener.html#method.incoming
     let listener = UnixListener::bind("/home/ryotaro/a.socket")?;
-    if verbose {
-        println!("Server listening on /home/ryotaro/a.socket");
-    }
-    listener.accept()?;
+
     for stream in listener.incoming() {
         match stream {
-            Ok(mut stream) => {
-                let mut buffer = String::new();
-                stream.read_to_string(&mut buffer)?;
-                if verbose {
-                    println!("Received: {}", buffer);
-                }
-                stream.write_all(b"Hello from server")?;
+            Ok(stream) => {
+                println!("new client!");
+                thread::spawn(|| handle_client(stream));
             }
             Err(err) => {
-                eprintln!("Connection failed: {}", err);
+                break;
             }
         }
     }
