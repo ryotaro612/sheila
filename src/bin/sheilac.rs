@@ -4,12 +4,10 @@ use std::io::prelude::*;
 fn main() -> std::io::Result<()> {
 
       let mut stream: UnixStream = UnixStream::connect("/home/ryotaro/a.socket")?;
-      let a = String::from("dあん");
-       stream.write_all(a.as_bytes())?;
-       // https://emmanuelbosquet.com/2022/whatsaunixsocket/#listen-to-responses-client-side
-       stream.shutdown(std::net::Shutdown::Write)?;
+       stream.write_all(b"hello world")?;
+       stream.flush()?;
     let mut response = String::new();
     stream.read_to_string(&mut response)?;
-    println!("{response} CLIENT");
+    println!("{response}");
     Ok(())
 }
