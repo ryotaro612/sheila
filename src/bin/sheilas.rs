@@ -1,18 +1,16 @@
 use std::thread;
 
 use std::io::prelude::*;
-use std::os::unix::net::{UnixStream, UnixListener};
+use std::os::unix::net::{UnixListener, UnixStream};
 
-fn handle_client(mut stream: UnixStream)  {
-        let mut message = String::new();
-        let a = stream
-        .read_to_string(&mut message);
-    a.unwrap(); 
+fn handle_client(mut stream: UnixStream) {
+    let mut message = String::new();
+    let a = stream.read_to_string(&mut message);
+    a.unwrap();
     println!("{message}");
     println!("{message}!!");
     // ...
 }
-
 
 fn main() -> std::io::Result<()> {
     // https://doc.rust-lang.org/std/os/unix/net/struct.UnixListener.html#method.incoming

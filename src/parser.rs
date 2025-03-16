@@ -1,8 +1,6 @@
 use std::ffi::OsString;
 
-use clap::{
-    Args, Parser, Subcommand,
-};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(name = "sheila")]
@@ -12,9 +10,9 @@ pub(crate) struct Cli {
 
     // https://stackoverflow.com/questions/76341332/clap-default-value-for-pathbuf
     #[arg(short, long, default_value = get_default_log_path())]
-    socket: String,
+    pub(crate) socket: String,
     // https://poyo.hatenablog.jp/entry/2022/10/10/170000
-     #[arg(short, long)]
+    #[arg(short, long)]
     pub(crate) verbose: bool,
 }
 
@@ -33,10 +31,7 @@ pub(crate) struct ServerArgs {
 }
 
 #[derive(Debug, Args)]
-pub(crate) struct ClientArgs {
-
-}
-
+pub(crate) struct ClientArgs {}
 
 pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::error::Error> {
     //let args = Cli::try_parse_from(["example", "server", "--port", "8080"]);
@@ -84,7 +79,6 @@ fn test_default_socket_file_is_defined() {
     assert_eq!(actual.socket, expected.to_str().unwrap());
 }
 
-
 #[test]
 fn test_verbose_option_is_available() {
     // arrange
@@ -98,4 +92,3 @@ fn test_verbose_option_is_available() {
 
     assert!(actual.verbose);
 }
-
