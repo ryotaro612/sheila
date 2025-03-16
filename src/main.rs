@@ -1,6 +1,25 @@
+
 mod parser;
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    // https://docs.rs/clap/latest/clap/type.Error.html
+    let result = parser::parse(args).map_err(|err| err.exit()).unwrap();
+
+
+    // match result {
+    //     Ok(cli) => {
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Error parsing arguments: {}", e);
+    //         //std::process.exit(1)
+    //     }
+    // }
+
+    env_logger::init();
+
+
+
     //let a: Vec<String> = std::env::args().collect();
     //parser::parse();
 }

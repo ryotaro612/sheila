@@ -58,11 +58,13 @@ pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::error::Error> {
     //     }
     // }
 }
-
+/**
+ * Defines the default socket file path.
+ */
 fn get_default_log_path() -> OsString {
-    let mut a = std::env::temp_dir();
-    a.push("sheila.socket");
-    a.into_os_string()
+    let mut p = std::env::temp_dir();
+    p.push("sheila.socket");
+    p.into_os_string()
 }
 
 #[test]
