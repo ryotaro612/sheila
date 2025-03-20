@@ -1,4 +1,7 @@
+use serde_json::Value;
+
 use crate::server::handler;
+use crate::server::jsonrpc;
 use std::fs;
 use std::io::Read;
 use std::io::Write;
@@ -17,7 +20,6 @@ impl<H: handler::Handler> Drop for Server<H> {
     }
 }
 
-
 impl<H: handler::Handler> Server<H> {
     pub(crate) fn new(socket: String, handler: H) -> Self {
         return Server { socket, handler };
@@ -34,10 +36,10 @@ impl<H: handler::Handler> Server<H> {
                         Ok(_) => {
                             log::debug!("received: {payload}");
                             let response = self.handler.handle(payload);
-                            s.write_all(response.response.to_string().as_bytes())
-                                .unwrap_or_else(|e| {
-                                    log::error!("error writing to a stream: {e}");
-                                });
+                            let body = response.response_as_string();
+                            s.write_all(body.as_bytes()).unwrap_or_else(|e| {
+                                log::error!("failed to write '{body}' to a stream: {e}");
+                            });
                             if response.is_stop_request {
                                 self.shutdown(&s);
                                 break;
@@ -45,20 +47,7 @@ impl<H: handler::Handler> Server<H> {
                         }
                         Err(err) => {
                             log::error!("error reading from a stream: {err}");
-                            s.write_all(
-                                serde_json::json!({
-                                    "jsonrpc": "2.0",
-                                    "error": {
-                                        "code": -32700,
-                                        "message": "failed to read a request",
-                                    }
-                                })
-                                .to_string()
-                                .as_bytes(),
-                            )
-                            .unwrap_or_else(|e| {
-                                log::error!("error writing to a stream: {e}");
-                            });
+                            jsonrpc::write_read_error(&s, &err);
                         }
                     }
                     self.shutdown(&s);
@@ -80,7 +69,7 @@ impl<H: handler::Handler> Server<H> {
             });
     }
     /**
-     * 
+     *
      */
     fn bind(&self) -> result::Result<net::UnixListener, io::Error> {
         let skt = &self.socket;

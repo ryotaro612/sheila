@@ -9,7 +9,7 @@ use std::result;
  */
 pub(crate) trait Client {
     /**
-     * 
+     *
      */
     fn send(
         &self,

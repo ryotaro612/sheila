@@ -1,9 +1,14 @@
 use serde_json;
 
-
 pub(crate) struct Response {
     pub(crate) is_stop_request: bool,
-    pub(crate) response: serde_json::Value,
+    response: serde_json::Value,
+}
+
+impl Response {
+    pub(crate) fn response_as_string(&self) -> String {
+        self.response.to_string()
+    }
 }
 
 pub(crate) trait Handler {
@@ -12,7 +17,7 @@ pub(crate) trait Handler {
 
 impl Handler for DefaultHandler {
     fn handle(&self, _request: String) -> Response {
-        Response{
+        Response {
             is_stop_request: true,
             response: serde_json::json!({}),
         }

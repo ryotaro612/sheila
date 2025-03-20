@@ -1,5 +1,6 @@
 use std::result;
 mod handler;
+mod jsonrpc;
 mod server;
 
 // sync=false is required playbin
