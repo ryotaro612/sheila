@@ -27,13 +27,13 @@ fn display(
     id: String,
     a: DisplayArgs,
 ) -> result::Result<(), String> {
-    let response = cli
+    let _response = cli
         .send(id, "display", json!({"file": a.file}))
         .map_err(|e| e.to_string())?;
     Ok(())
 }
 fn stop(cli: &impl sheila_client::Client, id: String) -> result::Result<(), String> {
-    let response = cli.send_method(id, "stop").map_err(|e| e.to_string())?;
+    let _response = cli.send_method(id, "stop").map_err(|e| e.to_string())?;
     Ok(())
 }
 

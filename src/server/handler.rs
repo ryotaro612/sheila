@@ -11,7 +11,7 @@ pub(crate) trait Handler {
 }
 
 impl Handler for DefaultHandler {
-    fn handle(&self, request: String) -> Response {
+    fn handle(&self, _request: String) -> Response {
         Response{
             is_stop_request: true,
             response: serde_json::json!({}),
