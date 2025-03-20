@@ -4,14 +4,22 @@ use std::io::Read;
 use std::io::Write;
 use std::net;
 use std::result;
-
+/**
+ * A JSON-RPC client.
+ */
 pub(crate) trait Client {
+    /**
+     * 
+     */
     fn send(
         &self,
         id: String,
         method: &str,
         params: serde_json::Value,
     ) -> result::Result<serde_json::Value, io::Error>;
+
+    /**
+     */
     fn send_method(&self, id: String, method: &str)
         -> result::Result<serde_json::Value, io::Error>;
 }
@@ -64,7 +72,7 @@ impl SocketClient {
         let mut message = String::new();
         stream.read_to_string(&mut message)?;
         let v: serde_json::Value = serde_json::from_str(&message)?;
-        println!("{v}");
+        log::debug!("received: {message}");
         Ok(v)
     }
 }

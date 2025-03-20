@@ -91,7 +91,9 @@ impl<H: handler::Handler> Server<H> {
                 log::error!("error shutting down the stream: {e}");
             });
     }
-
+    /**
+     * 
+     */
     fn bind(&self) -> result::Result<net::UnixListener, io::Error> {
         let skt = &self.socket;
         if path::Path::new(skt).exists() {

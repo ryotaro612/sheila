@@ -1,3 +1,6 @@
+/**
+ * This module defines command-line commands and their arguments.
+ */
 use std::ffi::OsString;
 
 use clap::{Args, Parser, Subcommand};
@@ -77,7 +80,7 @@ fn test_default_socket_file_is_defined() {
 }
 
 #[test]
-fn test_verbose_option_is_available() {
+fn test_server_subcommand_accepts_verbose_option() {
     // arrange
     let args: Vec<String> = vec!["sheila", "--verbose", "server"]
         .into_iter()
@@ -86,7 +89,21 @@ fn test_verbose_option_is_available() {
 
     // actual
     let actual = parse(args).unwrap();
+    // assert
+    assert!(actual.verbose);
+}
 
+#[test]
+fn test_client_subcommand_accepts_verbose_option() {
+    // arrange
+    let args: Vec<String> = vec!["sheila", "--verbose", "client", "stop"]
+        .into_iter()
+        .map(String::from)
+        .collect();
+
+    // actual
+    let actual = parse(args).unwrap();
+    // assert
     assert!(actual.verbose);
 }
 
