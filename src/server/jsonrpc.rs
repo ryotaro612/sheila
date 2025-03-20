@@ -1,12 +1,12 @@
 use std::{
     io::Error,
     io::Write,
-    os::unix::net::{self, UnixStream},
+    os::unix::net::{self},
 };
 
 
 
-pub(crate) fn write_read_error(mut stream: &net::UnixStream, error: &Error) {
+pub(crate) fn write_read_error(mut stream: &net::UnixStream, _error: &Error) {
     stream
         .write_all(
             serde_json::json!({
