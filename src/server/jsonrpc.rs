@@ -4,8 +4,6 @@ use std::{
     os::unix::net::{self},
 };
 
-
-
 pub(crate) fn write_read_error(mut stream: &net::UnixStream, _error: &Error) {
     stream
         .write_all(

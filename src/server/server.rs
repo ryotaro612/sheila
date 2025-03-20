@@ -1,5 +1,3 @@
-
-
 use crate::server::handler;
 use crate::server::jsonrpc;
 use std::fs;
@@ -35,7 +33,7 @@ impl<H: handler::Handler> Server<H> {
                     match req {
                         Ok(_) => {
                             log::debug!("received: {payload}");
-                            let response = self.handler.handle(payload);
+                            let response = self.handler.handle(&payload);
                             let body = response.response_as_string();
                             s.write_all(body.as_bytes()).unwrap_or_else(|e| {
                                 log::error!("failed to write '{body}' to a stream: {e}");
