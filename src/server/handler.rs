@@ -1,12 +1,21 @@
 use serde_json;
 
+
+pub(crate) struct Response {
+    pub(crate) is_stop_request: bool,
+    pub(crate) response: serde_json::Value,
+}
+
 pub(crate) trait Handler {
-    fn handle(&self, request: String) -> serde_json::Value;
+    fn handle(&self, request: String) -> Response;
 }
 
 impl Handler for DefaultHandler {
-    fn handle(&self, request: String) -> serde_json::Value {
-        serde_json::json!({})
+    fn handle(&self, request: String) -> Response {
+        Response{
+            is_stop_request: true,
+            response: serde_json::json!({}),
+        }
     }
 }
 

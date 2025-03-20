@@ -17,23 +17,11 @@ impl<H: handler::Handler> Drop for Server<H> {
     }
 }
 
-struct Response {
-    is_stop_request: bool,
-    response: serde_json::Value,
-}
 
 impl<H: handler::Handler> Server<H> {
     pub(crate) fn new(socket: String, handler: H) -> Self {
         return Server { socket, handler };
     }
-    fn handle(&self, request: String) -> Response {
-        let v = serde_json::from_str(request.as_str());
-        Response {
-            is_stop_request: false,
-            response: v.unwrap(),
-        }
-    }
-
     pub(crate) fn start(&self) -> result::Result<(), io::Error> {
         let listener = self.bind()?;
         let mut result: Result<(), io::Error> = Ok(());
@@ -45,7 +33,7 @@ impl<H: handler::Handler> Server<H> {
                     match req {
                         Ok(_) => {
                             log::debug!("received: {payload}");
-                            let response = self.handle(payload);
+                            let response = self.handler.handle(payload);
                             s.write_all(response.response.to_string().as_bytes())
                                 .unwrap_or_else(|e| {
                                     log::error!("error writing to a stream: {e}");
