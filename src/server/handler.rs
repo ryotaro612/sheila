@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::option;
+use std::result;
+use std::sync::mpsc;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonRpcRequest {
@@ -25,7 +27,7 @@ pub(crate) trait Handler {
     fn handle(&self, request: &String) -> Response;
 }
 
-impl Handler for DefaultHandler {
+impl<'a> Handler for DefaultHandler<'a> {
     fn handle(&self, request: &String) -> Response {
         let v = request.as_str();
         let parsed: serde_json::Result<serde_json::Value> = serde_json::from_str(v);
@@ -74,17 +76,28 @@ impl Handler for DefaultHandler {
     }
 }
 
-impl DefaultHandler {
-    pub(crate) fn new() -> Self {
-        DefaultHandler {}
+impl<'a> DefaultHandler<'a> {
+    pub(crate) fn new(
+        command_sender: &'a mpsc::Sender<crate::command::Command>,
+        result_receiver: &'a mpsc::Receiver<result::Result<(), String>>,
+    ) -> Self {
+        DefaultHandler {
+            command_sender,
+            result_receiver,
+        }
     }
 }
 
-pub(crate) struct DefaultHandler {}
+pub(crate) struct DefaultHandler<'a> {
+    command_sender: &'a mpsc::Sender<crate::command::Command>,
+    result_receiver: &'a mpsc::Receiver<result::Result<(), String>>,
+}
 
 #[test]
 fn test_if_a_request_is_not_json_object_code_is_minus_32700() {
-    let actual = DefaultHandler::new().handle(&"".to_string());
+    let (sender, _) = mpsc::channel();
+    let (_, receiver) = mpsc::channel();
+    let actual = DefaultHandler::new(&sender, &receiver).handle(&"".to_string());
     assert_eq!(false, actual.is_stop_request);
     assert_eq!("2.0", actual.response["jsonrpc"]);
     assert_eq!(-32700, actual.response["error"]["code"]);

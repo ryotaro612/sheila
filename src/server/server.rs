@@ -32,7 +32,6 @@ impl<H: handler::Handler> Server<H> {
                     let req = s.read_to_string(&mut payload);
                     match req {
                         Ok(_) => {
-                            log::debug!("received: {payload}");
                             let response = self.handler.handle(&payload);
                             let body = response.response_as_string();
                             s.write_all(body.as_bytes()).unwrap_or_else(|e| {

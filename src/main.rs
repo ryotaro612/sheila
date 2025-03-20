@@ -1,8 +1,10 @@
-mod parser;
 use log;
 use std::process;
 mod client;
+mod command;
+mod consumer;
 mod logger;
+mod parser;
 mod server;
 
 fn main() {

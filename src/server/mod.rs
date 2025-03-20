@@ -2,6 +2,10 @@ use std::result;
 mod handler;
 mod jsonrpc;
 mod server;
+use crate::command;
+use crate::consumer;
+use std::sync::mpsc;
+use std::thread;
 
 // sync=false is required playbin
 
@@ -9,35 +13,39 @@ mod server;
  *  Initialize the log system
 */
 pub(crate) fn run(socket: String) -> result::Result<(), String> {
-    let server = server::Server::new(socket, handler::DefaultHandler::new());
-    server.start().map_err(|e| e.to_string())
+    let (command_sender, command_receiver) = mpsc::channel::<command::Command>();
+    let (result_sender, result_receiver) = mpsc::channel::<result::Result<(), String>>();
+
+    let server = thread::spawn(move || {
+        let server = server::Server::new(
+            socket,
+            handler::DefaultHandler::new(&command_sender, &result_receiver),
+        );
+        server.start().map_err(|e| e.to_string())
+    });
+    let consumer =
+        thread::spawn(move || consumer::Consumer::new(&command_receiver, &result_sender).run());
+    let mut errors: Vec<String> = Vec::new();
+    match consumer.join() {
+        Ok(Ok(_)) => {}
+        Ok(Err(e)) => {
+            errors.push(e);
+        }
+        Err(_) => {
+            errors.push(format!("failed to join the consumer thread"));
+        }
+    }
+    match server.join() {
+        Ok(Ok(_)) => {}
+        Ok(Err(e)) => {
+            errors.push(e);
+        }
+        Err(_) => {
+            errors.push(String::from("failed to join the consumer thread"));
+        }
+    };
+    match errors.len() {
+        0 => Ok(()),
+        _ => Err(errors.join(", ")),
+    }
 }
-
-// struct Response {
-//     is_stop: bool,
-//     response: serde_json::Value,
-// }
-
-// impl Response {
-//     fn as_string(&self) -> String {
-//         self.response.to_string()
-//     }
-// }
-
-// fn handle(request: String) -> result::Result<Response, serde_json::Value> {
-//     Ok(Response {
-//         is_stop: false,
-//         response: serde_json::json!({}),
-//     })
-// }
-
-// /**
-//  * Force to bind the socket.
-//  * If a file exits at the path, it will be removed.
-//  */
-// fn bind(socket: String) -> result::Result<UnixListener, String> {
-//     if path::Path::new(&socket).exists() {
-//         fs::remove_file(&socket).map_err(|e| e.to_string())?;
-//     }
-//     UnixListener::bind(socket).map_err(|e| e.to_string())
-// }
