@@ -1,9 +1,9 @@
+use crate::server::response;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::option;
 use std::result;
 use std::sync::mpsc;
-use crate::server::response;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JsonRpcRequest {
@@ -12,8 +12,6 @@ struct JsonRpcRequest {
     params: option::Option<serde_json::Value>,
     id: String,
 }
-
-
 
 pub(crate) trait Handler {
     fn handle(&self, request: &String) -> response::Response;
@@ -29,17 +27,19 @@ impl<'a> Handler for DefaultHandler<'a> {
                 match req {
                     Ok(r) => {
                         log::debug!("received: {:?}", r);
-                        response::Response::Stop { id: r.id }
+                        response::Response::Success { id: r.id }
                     }
                     Err(e) => {
                         log::debug!("invalid request: error: {e}");
-                        response::Response::InvalidRequest{error: e}
+                        response::Response::InvalidRequest { error: e }
                     }
                 }
             }
             Err(e) => {
                 log::debug!("invalid json: {e}");
-                response::Response::ParseError{error: e}
+                response::Response::ParseError {
+                    error: e.to_string(),
+                }
             }
         }
     }

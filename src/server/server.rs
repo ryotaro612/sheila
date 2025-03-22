@@ -1,12 +1,12 @@
 use crate::server::handler;
-use crate::server::jsonrpc;
 use std::fs;
 use std::io::Read;
-use std::io::Write;
 use std::os::unix::net;
 use std::path;
 use std::process;
 use std::{io, result};
+
+use super::response;
 
 impl<H: handler::Handler> Drop for Server<H> {
     fn drop(&mut self) {
@@ -33,10 +33,7 @@ impl<H: handler::Handler> Server<H> {
                     match req {
                         Ok(_) => {
                             let response = self.handler.handle(&payload);
-                            let body = response.response_as_string();
-                            s.write_all(body.as_bytes()).unwrap_or_else(|e| {
-                                log::error!("failed to write '{body}' to a stream: {e}");
-                            });
+                            response::write_response(&s, &response);
                             if response.is_stop_request() {
                                 self.shutdown(&s);
                                 break;
@@ -44,7 +41,7 @@ impl<H: handler::Handler> Server<H> {
                         }
                         Err(err) => {
                             log::error!("error reading from a stream: {err}");
-                            jsonrpc::write_read_error(&s, &err);
+                            response::write_parse_error_response(&s, "error reading from a stream");
                         }
                     }
                     self.shutdown(&s);

@@ -1,8 +1,7 @@
 use std::result;
 mod handler;
-mod jsonrpc;
-mod server;
 mod response;
+mod server;
 use crate::command;
 use crate::consumer;
 use std::sync::mpsc;
