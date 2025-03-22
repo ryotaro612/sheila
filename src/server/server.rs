@@ -37,7 +37,7 @@ impl<H: handler::Handler> Server<H> {
                             s.write_all(body.as_bytes()).unwrap_or_else(|e| {
                                 log::error!("failed to write '{body}' to a stream: {e}");
                             });
-                            if response.is_stop_request {
+                            if response.is_stop_request() {
                                 self.shutdown(&s);
                                 break;
                             }
@@ -99,11 +99,3 @@ pub(crate) struct Server<H: handler::Handler> {
     socket: String,
     handler: H,
 }
-
-// #[test]
-// fn test_handle() {
-//     let server = Server::new("".to_string(), handler::Handler{});
-//     let response = server.handle(r#"{"jsonrpc": "2.0", "method": "stop", "id": "doge"}"#.to_string());
-//     assert_eq!(response.is_stop_request, true);
-//     assert_eq!(response.response, serde_json::json!({"jsonrpc": "2.0", "result": "ok", "id": "doge"}));
-// }

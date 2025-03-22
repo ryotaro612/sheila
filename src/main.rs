@@ -1,11 +1,11 @@
 use log;
 use std::process;
-mod parser;
 mod client;
-mod logger;
-mod server;
 mod command;
 mod consumer;
+mod logger;
+mod parser;
+mod server;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
