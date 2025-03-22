@@ -10,7 +10,7 @@ use std::thread;
 // sync=false is required playbin
 
 /**
- *  Initialize the log system
+ *  Initializes the log system.
 */
 pub(crate) fn run(socket: String) -> result::Result<(), String> {
     let (command_sender, command_receiver) = mpsc::channel::<command::Command>();
