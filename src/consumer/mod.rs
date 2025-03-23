@@ -4,8 +4,9 @@ use gtk4::gio::ApplicationFlags;
 use gtk4::glib::clone::Downgrade;
 use gtk4::prelude::*;
 use gtk4::{glib, Application, ApplicationWindow};
-use std::result;
 use std::sync::mpsc;
+use std::time::Duration;
+use std::{result, thread};
 
 pub fn run_window() -> glib::ExitCode {
     const app_id: &str = "org.gtk_rs.HelloWorld";
@@ -68,19 +69,23 @@ impl<'a> Consumer<'a> {
             #[weak]
             app,
             async move {
-                app.windows();
+                //app.windows();
                 loop {
-                    let command = self.command_receiver.recv();
+                    //let command = self.command_receiver.recv();
+                    let temp = Temp {
+                        command_receiver: &self.command_receiver,
+                    }
+                    .await;
+
                     c.send(Ok(()));
                 }
-                // while let Ok(enable_button) = receiver.recv().await {
-                //     button.set_sensitive(enable_button);
-                // }
             }
         ));
         log::debug!("before application run");
         // Run the application
-        app.run();
+        let args: &[String] = &[String::from("")];
+        // if run() is called, app interprets command line arguments
+        app.run_with_args(args);
         log::debug!("after application run");
         // loop {
         //     match self.command_receiver.recv() {
@@ -158,3 +163,30 @@ impl<'a> Consumer<'a> {
 //         Ok(())
 //     }
 // }
+
+struct Temp<'a> {
+    command_receiver: &'a mpsc::Receiver<command::Command>,
+}
+
+impl<'a> std::future::Future for Temp<'a> {
+    type Output = command::Command;
+
+    fn poll(
+        self: std::pin::Pin<&mut Self>,
+        ctx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        //log::debug!("polling");
+        match self.command_receiver.recv_timeout(Duration::from_millis(1)) {
+            Ok(command) => std::task::Poll::Ready(command),
+            Err(_) => {
+                let waker = ctx.waker().clone();
+                thread::spawn(move || {
+                    thread::sleep(Duration::from_millis(100));
+                    waker.wake_by_ref();
+                });
+
+                std::task::Poll::Pending
+            }
+        }
+    }
+}

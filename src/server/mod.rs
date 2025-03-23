@@ -5,6 +5,7 @@ mod response;
 mod server;
 use crate::command;
 use crate::consumer;
+use crate::consumer::run_window;
 use std::sync::mpsc;
 use std::thread;
 
