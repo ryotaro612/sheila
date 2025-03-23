@@ -1,12 +1,11 @@
 use crate::server::handler;
+use crate::server::response;
 use std::fs;
 use std::io::Read;
 use std::os::unix::net;
 use std::path;
 use std::process;
 use std::{io, result};
-
-use super::response;
 
 impl<H: handler::Handler> Drop for Server<H> {
     fn drop(&mut self) {
@@ -19,46 +18,35 @@ impl<H: handler::Handler> Drop for Server<H> {
 }
 
 impl<H: handler::Handler> Server<H> {
+    /** */
     pub(crate) fn new(socket: String, handler: H) -> Self {
         return Server { socket, handler };
     }
+    /** */
     pub(crate) fn start(&self) -> result::Result<(), io::Error> {
         let listener = self.bind()?;
-        let mut result: Result<(), io::Error> = Ok(());
-        for stream in listener.incoming() {
-            match stream {
-                Ok(mut s) => {
-                    let mut payload = String::new();
-                    let req = s.read_to_string(&mut payload);
-                    match req {
-                        Ok(_) => {
-                            let response = self.handler.handle(&payload);
-                            response::write_response(&s, &response);
-                            if response.is_stop_request() {
-                                self.shutdown(&s);
-                                break;
-                            }
-                        }
-                        Err(err) => {
-                            log::error!("error reading from a stream: {err}");
-                            response::write_response(
-                                &s,
-                                &response::Response::InternalError {
-                                    error: format!("error reading from a stream: {err}"),
-                                },
-                            );
-                        }
-                    }
-                    self.shutdown(&s);
-                }
+        for result_stream in listener.incoming() {
+            let mut stream = result_stream.map_err(|e| {
+                log::error!("connection failure: {e}");
+                e
+            })?;
+            let mut payload = String::new();
+            let response = match stream.read_to_string(&mut payload) {
+                Ok(_) => self.handler.handle(&payload),
                 Err(err) => {
-                    log::error!("error accepting a stream: {err}");
-                    result = Err(err);
-                    break;
+                    log::error!("error reading from a stream: {err}");
+                    response::Response::InternalError {
+                        error: format!("error reading from a stream: {err}"),
+                    }
                 }
             };
+            response::write_response(&stream, &response);
+            self.shutdown(&stream);
+            if response.is_stop_request() {
+                break;
+            }
         }
-        result
+        Ok(())
     }
     fn shutdown(&self, stream: &net::UnixStream) {
         stream
