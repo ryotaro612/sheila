@@ -2,6 +2,7 @@ use std::result;
 mod handler;
 mod response;
 mod server;
+mod request;
 use crate::command;
 use crate::consumer;
 use std::sync::mpsc;
