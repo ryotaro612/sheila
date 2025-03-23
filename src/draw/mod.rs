@@ -1,4 +1,5 @@
 use crate::command;
+mod receiver;
 mod wallpaper;
 use gtk4::glib;
 use std::sync::mpsc;
@@ -6,9 +7,6 @@ use std::time::Duration;
 use std::{result, thread};
 use wallpaper::Wallpaper;
 
-/**
- * TODO rename
- */
 pub(crate) struct Drawer<'a> {
     command_receiver: mpsc::Receiver<command::Command>,
     result_sender: &'a mpsc::Sender<result::Result<(), command::ErrorReason>>,
@@ -126,7 +124,7 @@ impl<'a> std::future::Future for Temp<'a> {
         ctx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         log::debug!("polling");
-        match self.command_receiver.recv_timeout(Duration::from_millis(1)) {
+        match self.command_receiver.recv_timeout(Duration::from_millis(0)) {
             Ok(command) => {
                 log::debug!("received command: {:?}", command);
                 std::task::Poll::Ready(command)
