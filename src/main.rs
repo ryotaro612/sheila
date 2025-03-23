@@ -1,13 +1,17 @@
+use client::run;
 use log;
 use std::process;
+
 mod client;
 mod command;
 mod consumer;
+use crate::consumer::run_window;
 mod logger;
 mod parser;
 mod server;
 
 fn main() {
+    //std::thread::spawn(|| run_window());
     let args: Vec<String> = std::env::args().collect();
     // https://docs.rs/clap/latest/clap/type.Error.html
     let cli = parser::parse(args).map_err(|err| err.exit()).unwrap();

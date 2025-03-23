@@ -1,6 +1,5 @@
 use crate::server::request::{self, makeCommand};
 use crate::server::response;
-use serde::{Deserialize, Serialize};
 use serde_json;
 use std::result;
 use std::sync::mpsc;

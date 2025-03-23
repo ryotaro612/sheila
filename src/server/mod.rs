@@ -26,7 +26,7 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
         server.start().map_err(|e| e.to_string())
     });
     let consumer =
-        thread::spawn(move || consumer::Consumer::new(&command_receiver, &result_sender).run());
+        thread::spawn(move || consumer::Consumer::new(command_receiver, &result_sender).run());
     let mut errors: Vec<String> = Vec::new();
     match consumer.join() {
         Ok(Ok(_)) => {}

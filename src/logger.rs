@@ -11,4 +11,7 @@ pub(crate) fn init_log(verbose: bool) {
         builder.filter_level(LevelFilter::Info);
     }
     builder.init();
+    if verbose {
+        log::debug!("verbose mode is on");
+    }
 }
