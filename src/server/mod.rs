@@ -5,7 +5,6 @@ mod response;
 mod server;
 use crate::command;
 use crate::consumer;
-use crate::consumer::run_window;
 use std::sync::mpsc;
 use std::thread;
 
@@ -19,16 +18,26 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
     let (result_sender, result_receiver) =
         mpsc::channel::<result::Result<(), command::ErrorReason>>();
 
-    let server = thread::spawn(move || {
+    let server_join = thread::spawn(move || {
         let server = server::Server::new(
             socket,
             handler::DefaultHandler::new(&command_sender, &result_receiver),
         );
         server.start().map_err(|e| e.to_string())
     });
+
     let consumer =
         thread::spawn(move || consumer::Consumer::new(command_receiver, &result_sender).run());
     let mut errors: Vec<String> = Vec::new();
+    match server_join.join() {
+        Ok(Ok(_)) => {}
+        Ok(Err(e)) => {
+            errors.push(e);
+        }
+        Err(_) => {
+            errors.push(String::from("failed to join the consumer thread"));
+        }
+    };
     match consumer.join() {
         Ok(Ok(_)) => {}
         Ok(Err(e)) => {
@@ -38,15 +47,7 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
             errors.push(format!("failed to join the consumer thread"));
         }
     }
-    match server.join() {
-        Ok(Ok(_)) => {}
-        Ok(Err(e)) => {
-            errors.push(e);
-        }
-        Err(_) => {
-            errors.push(String::from("failed to join the consumer thread"));
-        }
-    };
+
     match errors.len() {
         0 => Ok(()),
         _ => Err(errors.join(", ")),

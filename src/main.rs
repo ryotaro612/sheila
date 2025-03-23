@@ -5,7 +5,6 @@ use std::process;
 mod client;
 mod command;
 mod consumer;
-use crate::consumer::run_window;
 mod logger;
 mod parser;
 mod server;
