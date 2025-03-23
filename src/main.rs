@@ -3,7 +3,7 @@ use std::process;
 
 mod client;
 mod command;
-mod consumer;
+mod draw;
 mod logger;
 mod parser;
 mod server;

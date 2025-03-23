@@ -4,7 +4,7 @@ mod request;
 mod response;
 mod server;
 use crate::command;
-use crate::consumer;
+use crate::draw;
 use std::sync::mpsc;
 use std::thread;
 
@@ -26,8 +26,8 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
         server.start().map_err(|e| e.to_string())
     });
 
-    let consumer =
-        thread::spawn(move || consumer::Consumer::new(command_receiver, &result_sender).run());
+    let drawer_join =
+        thread::spawn(move || draw::Drawer::new(command_receiver, &result_sender).run());
     let mut errors: Vec<String> = Vec::new();
     match server_join.join() {
         Ok(Ok(_)) => {}
@@ -35,10 +35,10 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
             errors.push(e);
         }
         Err(_) => {
-            errors.push(String::from("failed to join the consumer thread"));
+            errors.push(String::from("failed to join the server thread"));
         }
     };
-    match consumer.join() {
+    match drawer_join.join() {
         Ok(Ok(_)) => {}
         Ok(Err(e)) => {
             errors.push(e);

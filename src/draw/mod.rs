@@ -35,17 +35,17 @@ fn build_ui(app: &Application) {
 /**
  * TODO rename
  */
-pub(crate) struct Consumer<'a> {
+pub(crate) struct Drawer<'a> {
     command_receiver: mpsc::Receiver<command::Command>,
     result_sender: &'a mpsc::Sender<result::Result<(), command::ErrorReason>>,
 }
 
-impl<'a> Consumer<'a> {
+impl<'a> Drawer<'a> {
     pub(crate) fn new(
         command_receiver: mpsc::Receiver<command::Command>,
         result_sender: &'a mpsc::Sender<result::Result<(), command::ErrorReason>>,
     ) -> Self {
-        Consumer {
+        Drawer {
             command_receiver,
             result_sender,
         }

@@ -1,5 +1,5 @@
 use crate::command;
-use crate::server::request::{self, makeCommand};
+use crate::server::request::{self, make_command};
 use crate::server::response;
 use serde_json;
 use std::result;
@@ -34,7 +34,7 @@ impl<'a> DefaultHandler<'a> {
         let json_value = parsed.map_err(|error| response::Response::ParseError { error })?;
         let json_rpc_request: request::JsonRpcRequest = serde_json::from_value(json_value)
             .map_err(|error| response::Response::InvalidRequest { error })?;
-        let command = makeCommand(&json_rpc_request)?;
+        let command = make_command(&json_rpc_request)?;
         self.command_sender.send(command).map_err(|error| {
             log::error!(
                 "error sending command. request: {:?} error: {error}",

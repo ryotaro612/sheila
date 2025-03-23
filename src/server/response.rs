@@ -9,9 +9,9 @@ impl Response {
                 "id": id,
             })
             .to_string(),
-            Response::ParseError { error: e } => {
-                new_err_response(&-32700, &format!("{}", e), &None)
-            }
+            Response::MethodNotFound { error, id } => new_err_response(&-32601, error, &Some(id)),
+
+            Response::ParseError { error } => new_err_response(&-32700, &error.to_string(), &None),
             Response::InvalidRequest { error: e } => {
                 new_err_response(&-32600, &format!("{}", e), &None)
             }
@@ -48,6 +48,7 @@ pub(crate) enum Response {
     Success { id: String },
     ParseError { error: serde_json::Error },
     InvalidRequest { error: serde_json::Error },
+    MethodNotFound { id: String, error: String },
     InvalidParams { id: String, error: String },
     InternalError { error: String },
     ServerError { id: String, error: String },
@@ -139,5 +140,18 @@ fn test_internal_error_meets_jsonrpc2_spec() {
 
     assert_eq!("2.0", v["jsonrpc"]);
     assert_eq!(-32603, v["error"]["code"]);
+    assert!(v["error"]["message"].is_string());
+}
+#[test]
+fn test_method_not_found_meets_jsonrpc2_spec() {
+    let response = Response::MethodNotFound {
+        id: "foobar".to_string(),
+        error: "a".to_string(),
+    };
+    let actual = response.response_as_string();
+    let v: serde_json::Value = serde_json::from_str(&actual).unwrap();
+
+    assert_eq!("2.0", v["jsonrpc"]);
+    assert_eq!(-32601, v["error"]["code"]);
     assert!(v["error"]["message"].is_string());
 }
