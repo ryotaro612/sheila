@@ -68,6 +68,10 @@ impl Response {
         }
     }
 }
+
+pub(crate) fn new_parse_error(error: serde_json::Error) -> Response {
+    return Response::ParseError { error };
+}
 /**
  *
  */
@@ -82,7 +86,7 @@ pub(crate) fn write_response(mut stream: &net::UnixStream, response: &Response) 
 #[derive(Debug)]
 pub(crate) enum Response {
     Success { id: String },
-    ParseError { error: String },
+    ParseError { error: serde_json::Error },
     InvalidRequest { error: serde_json::Error },
     InvalidParams { id: String, error: String },
     InternalError { error: String },
@@ -91,8 +95,10 @@ pub(crate) enum Response {
 
 #[test]
 fn test_parse_erro_code_is_minus_32700() {
+    let c = serde_json::from_str::<serde_json::Value>("\"");
+
     let sut = Response::ParseError {
-        error: String::from("parse error"),
+        error: c.unwrap_err(),
     };
 
     let actual = sut.response_as_string();
