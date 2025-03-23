@@ -41,7 +41,12 @@ impl<H: handler::Handler> Server<H> {
                         }
                         Err(err) => {
                             log::error!("error reading from a stream: {err}");
-                            response::write_parse_error_response(&s, "error reading from a stream");
+                            response::write_response(
+                                &s,
+                                &response::Response::InternalError {
+                                    error: format!("error reading from a stream: {err}"),
+                                },
+                            );
                         }
                     }
                     self.shutdown(&s);

@@ -31,17 +31,13 @@ fn build_ui(app: &Application) {
 
 pub(crate) struct Consumer<'a> {
     command_receiver: &'a mpsc::Receiver<command::Command>,
-    result_sender: &'a mpsc::Sender<result::Result<(), String>>,
-}
-
-async fn a() -> i32 {
-    1
+    result_sender: &'a mpsc::Sender<result::Result<(), command::ErrorReason>>,
 }
 
 impl<'a> Consumer<'a> {
     pub(crate) fn new(
         command_receiver: &'a mpsc::Receiver<command::Command>,
-        result_sender: &'a mpsc::Sender<result::Result<(), String>>,
+        result_sender: &'a mpsc::Sender<result::Result<(), command::ErrorReason>>,
     ) -> Self {
         Consumer {
             command_receiver,
@@ -93,12 +89,12 @@ impl<'a> Consumer<'a> {
 
 struct Temp {
     command_receiver: mpsc::Receiver<command::Command>,
-    result_sender: mpsc::Sender<result::Result<(), String>>,
+    result_sender: mpsc::Sender<result::Result<(), command::ErrorReason>>,
 }
 impl Temp {
     pub(crate) fn new(
         command_receiver: mpsc::Receiver<command::Command>,
-        result_sender: mpsc::Sender<result::Result<(), String>>,
+        result_sender: mpsc::Sender<result::Result<(), command::ErrorReason>>,
     ) -> Self {
         Temp {
             command_receiver,

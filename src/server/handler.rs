@@ -1,10 +1,11 @@
+use crate::server::request::{self, makeCommand};
 use crate::server::response;
 use serde::{Deserialize, Serialize};
-use crate::server::request;
 use serde_json;
 use std::result;
 use std::sync::mpsc;
 
+use crate::command;
 
 pub(crate) trait Handler {
     fn handle(&self, request: &String) -> response::Response;
@@ -20,7 +21,50 @@ impl<'a> Handler for DefaultHandler<'a> {
                 match req {
                     Ok(r) => {
                         log::debug!("received: {:?}", r);
-                        response::Response::Success { id: r.id }
+                        match makeCommand(&r) {
+                            Ok(c) => match self.command_sender.send(c) {
+                                Ok(_) => match self.result_receiver.recv() {
+                                    Ok(res) => match res {
+                                        Ok(_) => {
+                                            log::debug!("command executed successfully");
+                                            response::Response::Success { id: r.id }
+                                        }
+                                        Err(e) => {
+                                            log::debug!("command failed: {:?}", e);
+                                            match e {
+                                                command::ErrorReason::InvalidParams { reason } => {
+                                                    response::Response::InvalidParams {
+                                                        id: r.id,
+                                                        error: reason,
+                                                    }
+                                                }
+                                                command::ErrorReason::ServerError { reason } => {
+                                                    response::Response::ServerError {
+                                                        id: r.id,
+                                                        error: reason,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    Err(e) => {
+                                        log::debug!("error receiving result: {e}");
+                                        response::Response::ServerError {
+                                            id: r.id,
+                                            error: e.to_string(),
+                                        }
+                                    }
+                                },
+                                Err(e) => {
+                                    log::debug!("error sending command: {e}");
+                                    response::Response::ServerError {
+                                        id: r.id,
+                                        error: e.to_string(),
+                                    }
+                                }
+                            },
+                            Err(resp) => resp,
+                        }
                     }
                     Err(e) => {
                         log::debug!("invalid request: error: {e}");
@@ -40,8 +84,8 @@ impl<'a> Handler for DefaultHandler<'a> {
 
 impl<'a> DefaultHandler<'a> {
     pub(crate) fn new(
-        command_sender: &'a mpsc::Sender<crate::command::Command>,
-        result_receiver: &'a mpsc::Receiver<result::Result<(), String>>,
+        command_sender: &'a mpsc::Sender<command::Command>,
+        result_receiver: &'a mpsc::Receiver<result::Result<(), command::ErrorReason>>,
     ) -> Self {
         DefaultHandler {
             command_sender,
@@ -52,7 +96,7 @@ impl<'a> DefaultHandler<'a> {
 
 pub(crate) struct DefaultHandler<'a> {
     command_sender: &'a mpsc::Sender<crate::command::Command>,
-    result_receiver: &'a mpsc::Receiver<result::Result<(), String>>,
+    result_receiver: &'a mpsc::Receiver<result::Result<(), command::ErrorReason>>,
 }
 
 // #[test]

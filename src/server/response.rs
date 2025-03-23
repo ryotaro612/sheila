@@ -1,8 +1,17 @@
 use std::{io::Write, os::unix::net};
 
 impl Response {
+    /**
+     * TODO errorの構造が誤っている. JSONrpcの私用でない
+     */
     fn response_as_string(&self) -> String {
         match self {
+            Response::Success { id } => serde_json::json!({
+                "jsonrpc": "2.0",
+                "result": "success",
+                "id": id,
+            })
+            .to_string(),
             Response::ParseError { error: e } => {
                 return serde_json::json!({
                     "jsonrpc": "2.0",
@@ -23,11 +32,30 @@ impl Response {
                 })
                 .to_string();
             }
-            Response::Success { id } => {
+            // FIXME
+            Response::ServerError { id, error } => {
                 return serde_json::json!({
                     "jsonrpc": "2.0",
-                    "result": "success",
+                    "error": error,
                     "id": id,
+                })
+                .to_string();
+            }
+
+            // FIXME
+            Response::InvalidParams { id, error } => {
+                return serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "error": error,
+                    "id": id,
+                })
+                .to_string();
+            }
+            // FIXME
+            Response::InternalError { error } => {
+                return serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "error": error,
                 })
                 .to_string();
             }
@@ -50,20 +78,15 @@ pub(crate) fn write_response(mut stream: &net::UnixStream, response: &Response) 
             log::error!("error writing {:?} to a stream: {e}", response);
         });
 }
-pub(crate) fn write_parse_error_response(stream: &net::UnixStream, message: &str) {
-    write_response(
-        &stream,
-        &Response::ParseError {
-            error: String::from(message),
-        },
-    );
-}
 
 #[derive(Debug)]
 pub(crate) enum Response {
     Success { id: String },
     ParseError { error: String },
     InvalidRequest { error: serde_json::Error },
+    InvalidParams { id: String, error: String },
+    InternalError { error: String },
+    ServerError { id: String, error: String },
 }
 
 #[test]

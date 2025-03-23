@@ -1,8 +1,8 @@
 use std::result;
 mod handler;
+mod request;
 mod response;
 mod server;
-mod request;
 use crate::command;
 use crate::consumer;
 use std::sync::mpsc;
@@ -15,7 +15,8 @@ use std::thread;
 */
 pub(crate) fn run(socket: String) -> result::Result<(), String> {
     let (command_sender, command_receiver) = mpsc::channel::<command::Command>();
-    let (result_sender, result_receiver) = mpsc::channel::<result::Result<(), String>>();
+    let (result_sender, result_receiver) =
+        mpsc::channel::<result::Result<(), command::ErrorReason>>();
 
     let server = thread::spawn(move || {
         let server = server::Server::new(
