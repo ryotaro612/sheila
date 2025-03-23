@@ -12,62 +12,9 @@ pub(crate) trait Handler {
 impl<'a> Handler for DefaultHandler<'a> {
     fn handle(&self, request: &String) -> response::Response {
         let v = request.as_str();
-        let parsed: serde_json::Result<serde_json::Value> = serde_json::from_str(v);
-        match parsed {
-            Ok(v) => {
-                let req: serde_json::Result<request::JsonRpcRequest> = serde_json::from_value(v);
-                match req {
-                    Ok(r) => {
-                        log::debug!("received: {:?}", r);
-                        match makeCommand(&r) {
-                            Ok(c) => match self.command_sender.send(c) {
-                                Ok(_) => match self.result_receiver.recv() {
-                                    Ok(res) => match res {
-                                        Ok(_) => response::Response::Success { id: r.id },
-                                        Err(e) => {
-                                            log::debug!("command failed: {:?}", e);
-                                            match e {
-                                                command::ErrorReason::InvalidParams { reason } => {
-                                                    response::Response::InvalidParams {
-                                                        id: r.id,
-                                                        error: reason,
-                                                    }
-                                                }
-                                                command::ErrorReason::ServerError { reason } => {
-                                                    response::Response::ServerError {
-                                                        id: r.id,
-                                                        error: reason,
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    },
-                                    Err(e) => {
-                                        log::debug!("error receiving result: {e}");
-                                        response::Response::ServerError {
-                                            id: r.id,
-                                            error: e.to_string(),
-                                        }
-                                    }
-                                },
-                                Err(error) => {
-                                    log::error!(
-                                        "error sending command. request: {:?} error: {error}",
-                                        r
-                                    );
-                                    response::Response::ServerError {
-                                        id: r.id,
-                                        error: error.to_string(),
-                                    }
-                                }
-                            },
-                            Err(resp) => resp,
-                        }
-                    }
-                    Err(error) => response::Response::InvalidRequest { error },
-                }
-            }
-            Err(error) => response::Response::ParseError { error },
+        match self.process(v) {
+            Ok(r) => r,
+            Err(e) => e,
         }
     }
 }
@@ -81,6 +28,50 @@ impl<'a> DefaultHandler<'a> {
             command_sender,
             result_receiver,
         }
+    }
+
+    fn process(&self, payload: &str) -> Result<response::Response, response::Response> {
+        let parsed: serde_json::Result<serde_json::Value> = serde_json::from_str(payload);
+        let json_value = parsed.map_err(|error| response::Response::ParseError { error })?;
+        let json_rpc_request: request::JsonRpcRequest = serde_json::from_value(json_value)
+            .map_err(|error| response::Response::InvalidRequest { error })?;
+        let command = makeCommand(&json_rpc_request)?;
+        self.command_sender.send(command).map_err(|error| {
+            log::error!(
+                "error sending command. request: {:?} error: {error}",
+                json_rpc_request,
+            );
+            response::Response::ServerError {
+                id: json_rpc_request.id.clone(),
+                error: error.to_string(),
+            }
+        })?;
+        let response = self.result_receiver.recv().map_err(|error| {
+            log::debug!(
+                "error receiving result: request: {:?}, error: {error}",
+                &json_rpc_request
+            );
+            response::Response::ServerError {
+                id: json_rpc_request.id.clone(),
+                error: error.to_string(),
+            }
+        })?;
+        response.map_err(|err_reason| match err_reason {
+            command::ErrorReason::InvalidParams { reason } => response::Response::InvalidParams {
+                id: json_rpc_request.id.clone(),
+                error: reason,
+            },
+            command::ErrorReason::ServerError { reason } => {
+                log::error!("command failed due to a server error: {reason}");
+                response::Response::ServerError {
+                    id: json_rpc_request.id.clone(),
+                    error: reason,
+                }
+            }
+        })?;
+        Ok(response::Response::Success {
+            id: json_rpc_request.id.clone(),
+        })
     }
 }
 
