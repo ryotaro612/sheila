@@ -1,23 +1,5 @@
-use gtk4::gio::ffi::G_RESOURCE_LOOKUP_FLAGS_NONE;
-use gtk4::gio::ApplicationFlags;
-use gtk4::glib::clone::Downgrade;
 use gtk4::prelude::*;
 use gtk4::{glib, Application, ApplicationWindow};
-use std::sync::mpsc;
-use std::time::Duration;
-use std::{result, thread};
-
-pub(crate) fn new_application() -> gtk4::Application {
-    Application::builder()
-        .application_id("dev.ryotaro.sheila")
-        .build()
-}
-
-pub(crate) fn run_application(app: &gtk4::Application) -> glib::ExitCode {
-    let args: &[String] = &[];
-    // if run() is called, app interprets command line arguments
-    app.run_with_args(args)
-}
 
 pub(crate) trait Wallpaper {
     fn new_application() -> impl Wallpaper;

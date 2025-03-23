@@ -1,39 +1,11 @@
 use crate::command;
 mod wallpaper;
-use gtk4::gio::ffi::G_RESOURCE_LOOKUP_FLAGS_NONE;
-use gtk4::gio::ApplicationFlags;
-use gtk4::glib::clone::Downgrade;
-use gtk4::prelude::*;
-use gtk4::{glib, Application, ApplicationWindow};
+use gtk4::glib;
 use std::sync::mpsc;
 use std::time::Duration;
 use std::{result, thread};
 use wallpaper::Wallpaper;
 
-pub fn run_window() -> glib::ExitCode {
-    const app_id: &str = "org.gtk_rs.HelloWorld";
-    // Create a new application
-    let app = Application::builder().application_id(app_id).build();
-
-    // Connect to "activate" signal of `app`
-    app.connect_activate(build_ui);
-
-    // Run the application
-    let args: &[String] = &[];
-    // if run() is called, app interprets command line arguments
-    app.run_with_args(args)
-}
-
-fn build_ui(app: &Application) {
-    // Create a window and set the title
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("My GTK App")
-        .build();
-
-    // Present window
-    window.present();
-}
 /**
  * TODO rename
  */
