@@ -17,6 +17,7 @@ pub fn run_window() -> glib::ExitCode {
 
     // Run the application
     let args: &[String] = &[];
+    // if run() is called, app interprets command line arguments
     app.run_with_args(args)
 }
 
