@@ -1,9 +1,6 @@
 use std::{io::Write, os::unix::net};
 
 impl Response {
-    /**
-     * TODO errorの構造が誤っている. JSONrpcの私用でない
-     */
     fn response_as_string(&self) -> String {
         match self {
             Response::Success { id } => serde_json::json!({
@@ -13,52 +10,18 @@ impl Response {
             })
             .to_string(),
             Response::ParseError { error: e } => {
-                return serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "error": {
-                      "code": -32700,
-                      "message": format!("invalid json: {}", e),
-                    }
-                })
-                .to_string();
+                new_err_response(&-32700, &format!("{}", e), &None)
             }
             Response::InvalidRequest { error: e } => {
-                return serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "error": {
-                      "code": -32600,
-                      "message": format!("invalid request: {}", e),
-                    }
-                })
-                .to_string();
+                new_err_response(&-32600, &format!("{}", e), &None)
             }
-            // FIXME
             Response::ServerError { id, error } => {
-                return serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "error": error,
-                    "id": id,
-                })
-                .to_string();
+                new_err_response(&-32000, error, &Some(id.as_str()))
             }
-
-            // FIXME
             Response::InvalidParams { id, error } => {
-                return serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "error": error,
-                    "id": id,
-                })
-                .to_string();
+                new_err_response(&-32602, error, &Some(id.as_str()))
             }
-            // FIXME
-            Response::InternalError { error } => {
-                return serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "error": error,
-                })
-                .to_string();
-            }
+            Response::InternalError { error } => new_err_response(&-32603, error, &None),
         }
     }
     pub(crate) fn is_stop_request(&self) -> bool {
@@ -69,9 +32,6 @@ impl Response {
     }
 }
 
-pub(crate) fn new_parse_error(error: serde_json::Error) -> Response {
-    return Response::ParseError { error };
-}
 /**
  *
  */
@@ -93,18 +53,91 @@ pub(crate) enum Response {
     ServerError { id: String, error: String },
 }
 
+fn new_err_response(code: &i32, message: &str, id: &Option<&str>) -> String {
+    let mut response = serde_json::json!({
+        "jsonrpc": "2.0",
+        "error": {
+            "code": code,
+            "message": message,
+        }
+    });
+    if let Some(id) = id {
+        response["id"] = serde_json::json!(id);
+    }
+    response.to_string()
+}
+
 #[test]
-fn test_parse_erro_code_is_minus_32700() {
-    let c = serde_json::from_str::<serde_json::Value>("\"");
-
-    let sut = Response::ParseError {
-        error: c.unwrap_err(),
+fn test_response_as_string_success() {
+    let response = Response::Success {
+        id: "123".to_string(),
     };
+    let actual = response.response_as_string();
+    let v: serde_json::Value = serde_json::from_str(&actual).unwrap();
 
-    let actual = sut.response_as_string();
-
-    let v: serde_json::Value = serde_json::from_str(actual.as_str()).unwrap();
+    assert_eq!("2.0", v["jsonrpc"]);
+    assert_eq!("success", v["result"]);
+    assert_eq!("123", v["id"]);
+}
+#[test]
+fn test_parse_error_meets_jsonrpc2_spec() {
+    let error = serde_json::from_str::<serde_json::Value>("\"").unwrap_err();
+    let response = Response::ParseError { error };
+    let actual = response.response_as_string();
+    let v: serde_json::Value = serde_json::from_str(&actual).unwrap();
 
     assert_eq!("2.0", v["jsonrpc"]);
     assert_eq!(-32700, v["error"]["code"]);
+    assert!(v["error"]["message"].is_string());
+}
+#[test]
+fn test_invalid_request_meets_jsonrpc2_spec() {
+    let error = serde_json::from_str::<serde_json::Value>("\"").unwrap_err();
+    let response = Response::InvalidRequest { error };
+    let actual = response.response_as_string();
+    let v: serde_json::Value = serde_json::from_str(&actual).unwrap();
+
+    assert_eq!("2.0", v["jsonrpc"]);
+    assert_eq!(-32600, v["error"]["code"]);
+    assert!(v["error"]["message"].is_string());
+}
+#[test]
+fn test_server_error_meets_jsonrpc2_spec() {
+    let response = Response::ServerError {
+        id: "456".to_string(),
+        error: "server error occurred".to_string(),
+    };
+    let actual = response.response_as_string();
+    let v: serde_json::Value = serde_json::from_str(&actual).unwrap();
+
+    assert_eq!("2.0", v["jsonrpc"]);
+    assert_eq!(-32000, v["error"]["code"]);
+    assert!(v["error"]["message"].is_string());
+    assert_eq!("456", v["id"]);
+}
+#[test]
+fn test_invalid_params_meets_jsonrpc2_spec() {
+    let response = Response::InvalidParams {
+        id: "789".to_string(),
+        error: "invalid parameters".to_string(),
+    };
+    let actual = response.response_as_string();
+    let v: serde_json::Value = serde_json::from_str(&actual).unwrap();
+
+    assert_eq!("2.0", v["jsonrpc"]);
+    assert_eq!(-32602, v["error"]["code"]);
+    assert!(v["error"]["message"].is_string());
+    assert_eq!("789", v["id"]);
+}
+#[test]
+fn test_internal_error_meets_jsonrpc2_spec() {
+    let response = Response::InternalError {
+        error: "internal error occurred".to_string(),
+    };
+    let actual = response.response_as_string();
+    let v: serde_json::Value = serde_json::from_str(&actual).unwrap();
+
+    assert_eq!("2.0", v["jsonrpc"]);
+    assert_eq!(-32603, v["error"]["code"]);
+    assert!(v["error"]["message"].is_string());
 }

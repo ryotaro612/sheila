@@ -6,13 +6,12 @@ use std::result;
 use std::sync::mpsc;
 
 pub(crate) trait Handler {
-    fn handle(&self, request: &String) -> response::Response;
+    fn handle(&self, request: &str) -> response::Response;
 }
 
 impl<'a> Handler for DefaultHandler<'a> {
-    fn handle(&self, request: &String) -> response::Response {
-        let v = request.as_str();
-        match self.process(v) {
+    fn handle(&self, request: &str) -> response::Response {
+        match self.process(request) {
             Ok(r) => r,
             Err(e) => e,
         }
