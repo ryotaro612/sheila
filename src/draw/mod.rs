@@ -1,4 +1,5 @@
 use crate::command;
+mod wallpaper;
 use gtk4::gio::ffi::G_RESOURCE_LOOKUP_FLAGS_NONE;
 use gtk4::gio::ApplicationFlags;
 use gtk4::glib::clone::Downgrade;
@@ -7,6 +8,7 @@ use gtk4::{glib, Application, ApplicationWindow};
 use std::sync::mpsc;
 use std::time::Duration;
 use std::{result, thread};
+use wallpaper::Wallpaper;
 
 pub fn run_window() -> glib::ExitCode {
     const app_id: &str = "org.gtk_rs.HelloWorld";
@@ -55,51 +57,27 @@ impl<'a> Drawer<'a> {
      *
      */
     pub(crate) fn run(self) -> result::Result<(), String> {
-        const app_id: &str = "org.gtk_rs.HelloWorld";
-        // Create a new application
-        let app = Application::builder()
-            .application_id(app_id)
-            //.flags()
-            .build();
         let c = self.result_sender.clone();
         // Connect to "activate" signal of `app`
-        app.connect_activate(build_ui);
-
+        let app = <gtk4::Application as wallpaper::Wallpaper>::new_application();
         glib::spawn_future_local(glib::clone!(
             #[weak]
             app,
             async move {
-                //app.windows();
                 loop {
-                    //let command = self.command_receiver.recv();
+                    log::debug!("running");
                     let temp = Temp {
                         command_receiver: &self.command_receiver,
                     }
                     .await;
-
+                    log::debug!("temp: {:?}", temp);
                     c.send(Ok(()));
+                    app.display();
                 }
             }
         ));
-        log::debug!("before application run");
-        // Run the application
-        let args: &[String] = &[String::from("")];
-        // if run() is called, app interprets command line arguments
-        app.run_with_args(args);
-        log::debug!("after application run");
-        // loop {
-        //     match self.command_receiver.recv() {
-        //         Ok(command) => {
-        //             thread::spawn(move || {
+        app.start();
 
-        //             });
-        //         }
-        //         Err(e) => {
-        //             return Err(format!("error receiving a command: {e}"));
-        //         }
-        //     }
-        //     break;
-        // }
         Ok(())
     }
 }
@@ -175,10 +153,14 @@ impl<'a> std::future::Future for Temp<'a> {
         self: std::pin::Pin<&mut Self>,
         ctx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
-        //log::debug!("polling");
+        log::debug!("polling");
         match self.command_receiver.recv_timeout(Duration::from_millis(1)) {
-            Ok(command) => std::task::Poll::Ready(command),
+            Ok(command) => {
+                log::debug!("received command: {:?}", command);
+                std::task::Poll::Ready(command)
+            }
             Err(_) => {
+                log::debug!("not found");
                 let waker = ctx.waker().clone();
                 thread::spawn(move || {
                     thread::sleep(Duration::from_millis(100));
