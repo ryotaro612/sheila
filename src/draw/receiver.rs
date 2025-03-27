@@ -1,7 +1,7 @@
 use std::{sync::mpsc, thread, time::Duration};
-struct ReceiveFuture<'a, T> {
-    receiver: &'a mpsc::Receiver<T>,
-    interval: Duration,
+pub(crate) struct ReceiveFuture<'a, T> {
+    pub(crate) receiver: &'a mpsc::Receiver<T>,
+    pub(crate) interval: Duration,
 }
 
 impl<'a, T: std::fmt::Debug> std::future::Future for ReceiveFuture<'a, T> {

@@ -1,7 +1,9 @@
 use crate::command;
 mod receiver;
 mod wallpaper;
+use crate::draw::receiver as dr;
 use gtk4::glib;
+use std::future::{Future, IntoFuture};
 use std::sync::mpsc;
 use std::time::Duration;
 use std::{result, thread};
@@ -30,26 +32,59 @@ impl<'a> Drawer<'a> {
         let c = self.result_sender.clone();
         // Connect to "activate" signal of `app`
         let app = <gtk4::Application as wallpaper::Wallpaper>::new_application();
-        glib::spawn_future_local(glib::clone!(
+
+        let join_handle = glib::spawn_future_local(glib::clone!(
             #[weak]
             app,
             async move {
                 loop {
                     log::debug!("running");
-                    let temp = Temp {
-                        command_receiver: &self.command_receiver,
+                    receiver::ReceiveFuture {
+                        receiver: &self.command_receiver,
+                        interval: Duration::from_millis(300),
                     }
                     .await;
-                    log::debug!("temp: {:?}", temp);
+
+                    //log::debug!("temp: {:?}", temp);
                     c.send(Ok(()));
                     app.display();
                 }
             }
         ));
-        app.start();
 
+        app.start();
         Ok(())
     }
+
+    // /**
+    //  *
+    //  */
+    // pub(crate) fn run(self) -> result::Result<(), String> {
+    //     let c = self.result_sender.clone();
+    //     // Connect to "activate" signal of `app`
+    //     let app = <gtk4::Application as wallpaper::Wallpaper>::new_application();
+
+    //     glib::spawn_future_local(glib::clone!(
+    //         #[weak]
+    //         app,
+    //         async move {
+    //             loop {
+    //                 log::debug!("running");
+    //                 let temp = Temp {
+    //                     command_receiver: &self.command_receiver,
+    //                     interval: Duration::from_millis(300),
+    //                 }
+    //                 .await;
+    //                 log::debug!("temp: {:?}", temp);
+    //                 c.send(Ok(()));
+    //                 app.display();
+    //             }
+    //         }
+    //     ));
+    //     app.start();
+
+    //     Ok(())
+    // }
 }
 
 // struct Temp {
@@ -112,12 +147,13 @@ impl<'a> Drawer<'a> {
 //     }
 // }
 
-struct Temp<'a> {
-    command_receiver: &'a mpsc::Receiver<command::Command>,
+struct Temp<'a, T> {
+    command_receiver: &'a mpsc::Receiver<T>,
+    interval: Duration,
 }
 
-impl<'a> std::future::Future for Temp<'a> {
-    type Output = command::Command;
+impl<'a, T> std::future::Future for Temp<'a, T> {
+    type Output = T;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
@@ -125,15 +161,13 @@ impl<'a> std::future::Future for Temp<'a> {
     ) -> std::task::Poll<Self::Output> {
         log::debug!("polling");
         match self.command_receiver.recv_timeout(Duration::from_millis(0)) {
-            Ok(command) => {
-                log::debug!("received command: {:?}", command);
-                std::task::Poll::Ready(command)
-            }
+            Ok(command) => std::task::Poll::Ready(command),
             Err(_) => {
                 log::debug!("not found");
                 let waker = ctx.waker().clone();
+                let interval = self.interval.clone();
                 thread::spawn(move || {
-                    thread::sleep(Duration::from_millis(100));
+                    thread::sleep(interval);
                     waker.wake_by_ref();
                 });
 
