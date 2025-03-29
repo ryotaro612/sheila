@@ -4,7 +4,7 @@ mod wallpaper;
 use crate::draw::receiver as dr;
 use gtk4::glib;
 use std::future::{Future, IntoFuture};
-use std::sync::mpsc;
+use std::sync::{self, mpsc};
 use std::time::Duration;
 use std::{result, thread};
 use wallpaper::Wallpaper;
@@ -33,22 +33,29 @@ impl<'a> Drawer<'a> {
         // Connect to "activate" signal of `app`
         let app = <gtk4::Application as wallpaper::Wallpaper>::new_application();
 
+        //let arc_cmd_receiver = sync::Arc::new(sync::Mutex::new(self.command_receiver));
         let join_handle = glib::spawn_future_local(glib::clone!(
             #[weak]
             app,
             async move {
                 loop {
-                    log::debug!("running");
-                    receiver::ReceiveFuture {
-                        receiver: &self.command_receiver,
-                        interval: Duration::from_millis(300),
-                    }
-                    .await;
-
-                    //log::debug!("temp: {:?}", temp);
-                    c.send(Ok(()));
-                    app.display();
+                    //arc_cmd_receiver.clone().lock().unwrap();
+                    let c = &self.command_receiver;
                 }
+
+                // loop {
+                //     log::debug!("running");
+                //     receiver::ReceiveFuture {
+                //         receiver: &self.command_receiver,
+                //         interval: Duration::from_millis(300),
+                //     }
+                //     .await;
+
+                //     //log::debug!("temp: {:?}", temp);
+                //     c.send(Ok(()));
+                //     app.display();
+                //     break;
+                // }
             }
         ));
 
