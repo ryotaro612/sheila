@@ -1,10 +1,14 @@
 use gtk4::prelude::*;
 use gtk4::{glib, Application, ApplicationWindow};
 
+use crate::command::{Command, ErrorReason};
+
 pub(crate) trait Wallpaper {
     fn new_application() -> impl Wallpaper;
     fn start(&self) -> glib::ExitCode;
     fn display(&self);
+    fn terminate(&self);
+    fn execute(&self, command: Command) -> Option<ErrorReason>;
 }
 
 impl Wallpaper for gtk4::Application {
@@ -14,6 +18,13 @@ impl Wallpaper for gtk4::Application {
             .build();
         app.connect_activate(build_ui);
         app
+    }
+    fn terminate(&self) {
+        self.quit();
+    }
+
+    fn execute(&self, command: Command) -> Option<ErrorReason> {
+        None
     }
 
     fn start(&self) -> glib::ExitCode {

@@ -1,6 +1,5 @@
 use crate::command;
 use crate::server::response;
-use crate::server::response::Response;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::option;
@@ -48,7 +47,7 @@ fn test_method_not_found_unknown_is_returned_if_method_is_unknown() {
     };
     let actual = make_command(&r).unwrap_err();
     match actual {
-        Response::MethodNotFound { id, error: _ } => {
+        response::Response::MethodNotFound { id, error: _ } => {
             assert_eq!("id", id);
         }
         _ => {

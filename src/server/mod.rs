@@ -15,8 +15,7 @@ use std::thread;
 */
 pub(crate) fn run(socket: String) -> result::Result<(), String> {
     let (command_sender, command_receiver) = mpsc::channel::<command::Command>();
-    let (result_sender, result_receiver) =
-        mpsc::channel::<result::Result<(), command::ErrorReason>>();
+    let (result_sender, result_receiver) = mpsc::channel::<Option<command::ErrorReason>>();
 
     let server_join = thread::spawn(move || {
         let server = server::Server::new(
