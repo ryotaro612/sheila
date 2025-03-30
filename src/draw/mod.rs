@@ -43,35 +43,26 @@ impl<'a> Drawer<'a> {
                     #[weak]
                     app,
                     move |c: Command| {
-                        log::debug!("command: {:?}", c);
+                        log::debug!("received command: {:?}", c);
                         let res = app.execute(c);
                         if let Err(e) = sender.send(res) {
-                            log::error!("error sending a result: {e}");
+                            log::error!("disconnected: {e}");
                             app.terminate();
                         }
-                    }
-                );
-                let stopper = glib::clone!(
-                    #[weak]
-                    app,
-                    move || {
-                        log::debug!("stopping the app");
-                        app.terminate();
                     }
                 );
                 loop {
                     let res = dr::ReceivedFuture::new(arc_receiver.clone()).await;
                     match res {
-                        Ok(cmd) => {
-                            f(cmd);
-                        }
+                        Ok(cmd) => f(cmd),
                         Err(r_err) => {
-                            log::error!("error receiving a command: {r_err}");
-                            stopper();
+                            // https://doc.rust-lang.org/std/sync/mpsc/struct.RecvError.html
+                            log::debug!("disconnected: {r_err}");
                             break;
                         }
                     }
                 }
+                app.terminate();
             }
         ));
 
