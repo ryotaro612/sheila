@@ -70,3 +70,5 @@ impl<'a> Drawer<'a> {
         Ok(())
     }
 }
+
+fn temp() {}
