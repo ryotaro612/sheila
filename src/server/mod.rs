@@ -1,4 +1,6 @@
 use std::result;
+use std::time;
+use std::time::Duration;
 mod handler;
 mod request;
 mod response;
@@ -38,7 +40,6 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
             errors.push(format!("failed to join the consumer thread"));
         }
     }
-
     match server_join.join() {
         Ok(Ok(_)) => {}
         Ok(Err(e)) => {
