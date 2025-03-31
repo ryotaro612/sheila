@@ -16,11 +16,12 @@ serde = {version = "1.0.219", features = ["derive"]}
 serde_json = {version= "1.0.140"}
 env_logger = "0.11.7"
 gtk4 = {version="0.9.6", features=["v4_16"]}
+gdk4-sys ="0.9.6"
 gdk4 ="0.9.6"
 gtk4-layer-shell = "0.5.0"
 # infer = "0.15.0"
 # dbus = "0.9.7"
-# gio = "0.18.3"
+gio = "0.20.9"
 
 # gst-plugin-gtk4 = "0.11"
 # gstreamer ="0.21"

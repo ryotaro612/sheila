@@ -1,6 +1,9 @@
 use log;
-use std::process;
+use std::process::{self, exit};
 
+use gdk4::prelude::{DisplayExt, MonitorExt};
+use gdk4_sys;
+use gio::prelude::*;
 mod client;
 mod command;
 mod draw;
@@ -9,7 +12,7 @@ mod parser;
 mod server;
 
 fn main() {
-    //std::thread::spawn(|| run_window());
+    temp();
     let args: Vec<String> = std::env::args().collect();
     // https://docs.rs/clap/latest/clap/type.Error.html
     let cli = parser::parse(args).map_err(|err| err.exit()).unwrap();
@@ -25,6 +28,31 @@ fn main() {
         process::exit(1);
     });
 }
+
+fn temp() {
+    //let a = gdk4::Display::default();
+    //let display = gdk4_sys::gdk_display_get_default();
+    // gdk_monitor_get_geometry();
+    //gdk4_sys::
+    let c = gdk4::Display::open(None).unwrap();
+    println!("{:?}", c);
+    let display = gdk4::Display::default().unwrap();
+    let monitors = display.monitors();
+    let n = monitors.n_items();
+    println!("num: {n}");
+    let monitor = monitors
+        .item(1)
+        .unwrap()
+        .downcast::<gdk4::Monitor>()
+        .unwrap();
+
+    println!(
+        "monitor-size: {:?} {:?}",
+        monitor.connector(),
+        monitor.geometry()
+    );
+}
+
 // use gstreamer::prelude::*;
 // use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pipeline, State};
 // use gstreamer_video;

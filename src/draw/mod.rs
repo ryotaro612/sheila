@@ -2,6 +2,11 @@ use crate::command::{self, Command, ErrorReason};
 mod receiver;
 mod wallpaper;
 use crate::draw::receiver as dr;
+use gdk4;
+use gdk4::glib::property::PropertyGet;
+use gdk4::prelude::DisplayExt;
+use gdk4_sys;
+use gio::prelude::*;
 use gtk4::glib;
 use std::any::Any;
 use std::result;
@@ -71,4 +76,18 @@ impl<'a> Drawer<'a> {
     }
 }
 
-fn temp() {}
+// fn temp() {
+//     //let a = gdk4::Display::default();
+//     //let display = gdk4_sys::gdk_display_get_default();
+//     // gdk_monitor_get_geometry();
+//     //gdk4_sys::
+//     let display = gdk4::Display::default().unwrap();
+//     let monitors = display.monitors();
+//     let n = monitors.n_items();
+//     log::debug!("num: {n}");
+//     let monitor = monitors
+//         .item(0)
+//         .unwrap()
+//         .downcast::<gdk4::Monitor>()
+//         .unwrap();
+// }

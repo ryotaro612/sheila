@@ -28,15 +28,7 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
     let drawer_join =
         thread::spawn(move || draw::Drawer::new(command_receiver, &result_sender).run());
     let mut errors: Vec<String> = Vec::new();
-    match server_join.join() {
-        Ok(Ok(_)) => {}
-        Ok(Err(e)) => {
-            errors.push(e);
-        }
-        Err(_) => {
-            errors.push(String::from("failed to join the server thread"));
-        }
-    };
+
     match drawer_join.join() {
         Ok(Ok(_)) => {}
         Ok(Err(e)) => {
@@ -47,6 +39,15 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
         }
     }
 
+    match server_join.join() {
+        Ok(Ok(_)) => {}
+        Ok(Err(e)) => {
+            errors.push(e);
+        }
+        Err(_) => {
+            errors.push(String::from("failed to join the server thread"));
+        }
+    };
     match errors.len() {
         0 => Ok(()),
         _ => Err(errors.join(", ")),
