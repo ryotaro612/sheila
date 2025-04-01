@@ -24,7 +24,7 @@ pub(crate) trait Client {
 
     /**
      */
-    fn send_method(&self, id: String, method: &str) -> result::Result<serde_json::Value, String>;
+    fn send_method(&self, id: &str, method: &str) -> result::Result<serde_json::Value, String>;
 }
 
 pub(crate) struct SocketClient {
@@ -47,7 +47,7 @@ impl Client for SocketClient {
         self.request(request)
     }
 
-    fn send_method(&self, id: String, method: &str) -> result::Result<serde_json::Value, String> {
+    fn send_method(&self, id: &str, method: &str) -> result::Result<serde_json::Value, String> {
         let request = json!({
             "jsonrpc": "2.0",
             "method": method,
