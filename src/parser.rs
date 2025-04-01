@@ -27,17 +27,18 @@ pub(crate) enum Commands {
     Client(ClientArgs),
 }
 
-#[derive(Debug, Subcommand)]
-pub(crate) enum ClientSubCommands {
-    #[command(about = "Display")]
-    Display(DisplayArgs),
-    Stop,
-}
-
 #[derive(Debug, Args)]
 pub(crate) struct ClientArgs {
     #[command(subcommand)]
     pub(crate) command: ClientSubCommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub(crate) enum ClientSubCommands {
+    #[command(about = "Display")]
+    Display(DisplayArgs),
+    Status,
+    Stop,
 }
 
 #[derive(Debug, Args)]
@@ -64,125 +65,138 @@ fn get_default_log_path() -> OsString {
     p.into_os_string()
 }
 
-#[test]
-fn test_default_socket_file_is_defined() {
-    // arrange
-    let args: Vec<String> = vec!["sheila", "server"]
-        .into_iter()
-        .map(String::from)
-        .collect();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_default_socket_file_is_defined() {
+        // arrange
+        let args: Vec<String> = vec!["sheila", "server"]
+            .into_iter()
+            .map(String::from)
+            .collect();
 
-    // actual
-    let actual = parse(args).unwrap();
+        // actual
+        let actual = parse(args).unwrap();
 
-    // assert
-    let mut expected = std::env::temp_dir();
-    expected.push("sheila.socket");
+        // assert
+        let mut expected = std::env::temp_dir();
+        expected.push("sheila.socket");
 
-    assert_eq!(actual.socket, expected.to_str().unwrap());
-}
-
-#[test]
-fn test_server_subcommand_accepts_verbose_option() {
-    // arrange
-    let args: Vec<String> = vec!["sheila", "--verbose", "server"]
-        .into_iter()
-        .map(String::from)
-        .collect();
-
-    // actual
-    let actual = parse(args).unwrap();
-    // assert
-    assert!(actual.verbose);
-}
-
-#[test]
-fn test_client_subcommand_accepts_verbose_option() {
-    // arrange
-    let args: Vec<String> = vec!["sheila", "--verbose", "client", "stop"]
-        .into_iter()
-        .map(String::from)
-        .collect();
-
-    // actual
-    let actual = parse(args).unwrap();
-    // assert
-    assert!(actual.verbose);
-}
-
-#[test]
-fn test_client_has_display_subcommand() {
-    let args: Vec<String> = vec!["sheila", "--verbose", "client", "display", "image.png"]
-        .into_iter()
-        .map(String::from)
-        .collect();
-
-    // actual
-    let actual = parse(args).unwrap();
-
-    match actual.command {
-        Commands::Client(client_args) => match client_args.command {
-            ClientSubCommands::Display(args) => {
-                assert_eq!(None, args.monitor);
-                assert_eq!("image.png", args.file);
-            }
-            _ => panic!("unexpected subcommand"),
-        },
-        _ => panic!("unexpected command"),
+        assert_eq!(actual.socket, expected.to_str().unwrap());
     }
 
-    assert!(actual.verbose);
-}
+    #[test]
+    fn test_server_subcommand_accepts_verbose_option() {
+        // arrange
+        let args: Vec<String> = vec!["sheila", "--verbose", "server"]
+            .into_iter()
+            .map(String::from)
+            .collect();
 
-#[test]
-fn test_display_command_has_optional_monitor() {
-    let args: Vec<String> = vec![
-        "sheila",
-        "--verbose",
-        "client",
-        "display",
-        "--monitor",
-        "eDP-1",
-        "image.png",
-    ]
-    .into_iter()
-    .map(String::from)
-    .collect();
-
-    // actual
-    let actual = parse(args).unwrap();
-
-    match actual.command {
-        Commands::Client(client_args) => match client_args.command {
-            ClientSubCommands::Display(args) => {
-                assert_eq!(Some(String::from("eDP-1")), args.monitor);
-            }
-            _ => panic!("unexpected subcommand"),
-        },
-        _ => panic!("unexpected command"),
+        // actual
+        let actual = parse(args).unwrap();
+        // assert
+        assert!(actual.verbose);
     }
 
-    assert!(actual.verbose);
-}
+    #[test]
+    fn test_client_subcommand_accepts_verbose_option() {
+        // arrange
+        let args: Vec<String> = vec!["sheila", "--verbose", "client", "stop"]
+            .into_iter()
+            .map(String::from)
+            .collect();
 
-#[test]
-fn test_client_provides_stop_command() {
-    // arrange
-    let args: Vec<String> = vec!["sheila", "client", "stop"]
-        .into_iter()
-        .map(String::from)
-        .collect();
+        // actual
+        let actual = parse(args).unwrap();
+        // assert
+        assert!(actual.verbose);
+    }
 
-    // actual
-    let actual = parse(args);
-    // assert
-    match actual.unwrap().command {
-        Commands::Client(client_args) => match client_args.command {
-            ClientSubCommands::Stop => {
-                // nop
-            }
-            _ => panic!("unexpected subcommand"),
-        },
-        _ => panic!("unexpected command"),
+    #[test]
+    fn test_client_has_display_subcommand() {
+        let args: Vec<String> = vec!["sheila", "--verbose", "client", "display", "image.png"]
+            .into_iter()
+            .map(String::from)
+            .collect();
+
+        // actual
+        let actual = parse(args).unwrap();
+
+        match actual.command {
+            Commands::Client(client_args) => match client_args.command {
+                ClientSubCommands::Display(args) => {
+                    assert_eq!(None, args.monitor);
+                    assert_eq!("image.png", args.file);
+                }
+                _ => panic!("unexpected subcommand"),
+            },
+            _ => panic!("unexpected command"),
+        }
+
+        assert!(actual.verbose);
+    }
+
+    #[test]
+    fn test_display_command_has_optional_monitor() {
+        let args = arrange(vec![
+            "sheila",
+            "--verbose",
+            "client",
+            "display",
+            "--monitor",
+            "eDP-1",
+            "image.png",
+        ]);
+        // actual
+        let actual = parse(args).unwrap();
+
+        match actual.command {
+            Commands::Client(client_args) => match client_args.command {
+                ClientSubCommands::Display(args) => {
+                    assert_eq!(Some(String::from("eDP-1")), args.monitor);
+                }
+                _ => panic!("unexpected subcommand"),
+            },
+            _ => panic!("unexpected command"),
+        }
+
+        assert!(actual.verbose);
+    }
+
+    #[test]
+    fn client_provides_stop_command() {
+        // arrange
+        let args = arrange(vec!["sheila", "client", "stop"]);
+        // actual
+        let actual = parse(args);
+        // assert
+        match actual.unwrap().command {
+            Commands::Client(client_args) => match client_args.command {
+                ClientSubCommands::Stop => {
+                    // nop
+                }
+                _ => panic!("unexpected subcommand"),
+            },
+            _ => panic!("unexpected command"),
+        }
+    }
+
+    #[test]
+    fn client_has_status_command() {
+        let args = arrange(vec!["sheila", "client", "status"]);
+
+        let actual = parse(args);
+        if let Commands::Client(ClientArgs {
+            command: ClientSubCommands::Status,
+        }) = actual.unwrap().command
+        {
+        } else {
+            panic!("unexpected command");
+        }
+    }
+    fn arrange(v: Vec<&str>) -> Vec<String> {
+        v.into_iter().map(|s| s.to_string()).collect()
     }
 }

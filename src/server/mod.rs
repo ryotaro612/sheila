@@ -1,6 +1,4 @@
 use std::result;
-use std::time;
-use std::time::Duration;
 mod handler;
 mod request;
 mod response;

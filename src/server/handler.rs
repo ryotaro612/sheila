@@ -27,7 +27,9 @@ impl<'a> DefaultHandler<'a> {
             result_receiver,
         }
     }
-
+    /**
+     * passes a recived command to the GUI handler.
+     */
     fn process(&self, payload: &str) -> Result<response::Response, response::Response> {
         let parsed: serde_json::Result<serde_json::Value> = serde_json::from_str(payload);
         let json_value = parsed.map_err(|error| response::Response::ParseError { error })?;
@@ -83,21 +85,25 @@ pub(crate) struct DefaultHandler<'a> {
     result_receiver: &'a mpsc::Receiver<Option<command::ErrorReason>>,
 }
 
-#[test]
-fn test_return_parse_error_if_malfored_json_was_passed() {
-    let (sender, _) = mpsc::channel();
-    let (_, result_receiver) = mpsc::channel::<Option<command::ErrorReason>>();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_return_parse_error_if_malfored_json_was_passed() {
+        let (sender, _) = mpsc::channel();
+        let (_, result_receiver) = mpsc::channel::<Option<command::ErrorReason>>();
 
-    let handler = DefaultHandler::new(&sender, &result_receiver);
+        let handler = DefaultHandler::new(&sender, &result_receiver);
 
-    // act
-    let response = handler.handle(&String::from("{"));
+        // act
+        let response = handler.handle(&String::from("{"));
 
-    // assert
-    match response {
-        response::Response::ParseError { error: _ } => {}
-        _ => {
-            panic!("unexpected response: {:?}", response);
+        // assert
+        match response {
+            response::Response::ParseError { error: _ } => {}
+            _ => {
+                panic!("unexpected response: {:?}", response);
+            }
         }
     }
 }

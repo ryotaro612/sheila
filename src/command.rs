@@ -1,6 +1,7 @@
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) enum Command {
     Stop,
+    Status,
 }
 
 /**

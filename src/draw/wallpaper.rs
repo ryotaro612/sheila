@@ -24,12 +24,7 @@ impl Wallpaper for gtk4::Application {
     }
 
     fn execute(&self, cmd: command::Command) -> Option<command::ErrorReason> {
-        match cmd {
-            command::Command::Stop => {
-                self.quit();
-                None
-            }
-        }
+        None
     }
 
     fn start(&self) -> glib::ExitCode {
