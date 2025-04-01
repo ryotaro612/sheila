@@ -1,3 +1,6 @@
+/**
+ * JSON RPC response
+ */
 use std::{io::Write, os::unix::net};
 
 impl Response {

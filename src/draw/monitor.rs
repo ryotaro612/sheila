@@ -1,14 +1,10 @@
 use gdk4;
-use gdk4::glib::property::PropertyGet;
 use gdk4::prelude::DisplayExt;
 use gdk4::prelude::MonitorExt;
-use gdk4_sys;
 use gio::prelude::*;
-use glib::translate::FromGlibPtrContainer;
 use glib::Object;
-use std::any::Any;
 
-fn detect_monitors() -> Result<Monitors, String> {
+pub(crate) fn detect_monitors() -> Result<Monitors, String> {
     let display = detect_display()?;
     let monitors_list_model = display.monitors();
     let monitors: Vec<Monitor> = monitors_list_model
@@ -55,7 +51,7 @@ struct Monitor {
     height: i32,
 }
 
-struct Monitors {
+pub(crate) struct Monitors {
     monitors: Vec<Monitor>,
 }
 

@@ -1,14 +1,11 @@
 use log;
-use std::process::{self, exit};
-
-use gdk4::prelude::{DisplayExt, MonitorExt};
-use gdk4_sys;
-use gio::prelude::*;
+use std::process::{self};
 mod client;
 mod command;
 mod draw;
 mod logger;
 mod parser;
+mod response;
 mod server;
 
 fn main() {

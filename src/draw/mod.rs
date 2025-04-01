@@ -1,9 +1,8 @@
 use crate::command::{self, Command};
+mod monitor;
 mod receiver;
 mod wallpaper;
 use crate::draw::receiver as dr;
-mod monitor;
-
 use gtk4::glib;
 use std::result;
 use std::sync::{self, mpsc};
@@ -43,6 +42,7 @@ impl<'a> Drawer<'a> {
                 let f = glib::clone!(
                     #[weak]
                     app,
+                    // pass state
                     move |c: Command| {
                         log::debug!("received command: {:?}", c);
                         let res = app.execute(c);
@@ -52,6 +52,7 @@ impl<'a> Drawer<'a> {
                         }
                     }
                 );
+
                 loop {
                     let res = dr::ReceivedFuture::new(arc_receiver.clone()).await;
                     match res {

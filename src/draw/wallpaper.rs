@@ -1,7 +1,7 @@
+use crate::command;
+use crate::draw::monitor;
 use gtk4::prelude::*;
 use gtk4::{glib, Application, ApplicationWindow};
-
-use crate::command;
 
 pub(crate) trait Wallpaper {
     fn new_application() -> impl Wallpaper;
@@ -51,6 +51,10 @@ impl Wallpaper for gtk4::Application {
 
 fn build_ui(app: &Application) {
     // Create a window and set the title
+
+    let monitors = monitor::detect_monitors();
+    let windows = app.windows();
+
     let window = ApplicationWindow::builder()
         .application(app)
         .title("My GTK App")

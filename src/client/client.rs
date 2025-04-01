@@ -4,16 +4,21 @@ use std::io::Read;
 use std::io::Write;
 use std::net;
 use std::result;
+
+#[cfg(test)]
+use mockall::{automock, predicate::*};
 /**
  * A JSON-RPC client.
  */
+#[cfg_attr(test, automock)]
 pub(crate) trait Client {
     /**
-     *
+     * Returns Ok(v) if the request was successful, or Err(e) if there was an error.
+     * v is a JSON-RPC response.
      */
     fn send(
         &self,
-        id: String,
+        id: &str,
         method: &str,
         params: serde_json::Value,
     ) -> result::Result<serde_json::Value, io::Error>;
@@ -31,7 +36,7 @@ pub(crate) struct SocketClient {
 impl Client for SocketClient {
     fn send(
         &self,
-        id: String,
+        id: &str,
         method: &str,
         params: serde_json::Value,
     ) -> result::Result<serde_json::Value, io::Error> {

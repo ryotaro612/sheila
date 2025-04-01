@@ -44,6 +44,9 @@ pub(crate) struct ClientArgs {
 pub(crate) struct DisplayArgs {
     #[arg()]
     pub(crate) file: String,
+
+    #[arg(long)]
+    pub(crate) monitor: Option<String>,
 }
 
 /**
@@ -120,7 +123,39 @@ fn test_client_has_display_subcommand() {
     match actual.command {
         Commands::Client(client_args) => match client_args.command {
             ClientSubCommands::Display(args) => {
+                assert_eq!(None, args.monitor);
                 assert_eq!("image.png", args.file);
+            }
+            _ => panic!("unexpected subcommand"),
+        },
+        _ => panic!("unexpected command"),
+    }
+
+    assert!(actual.verbose);
+}
+
+#[test]
+fn test_display_command_has_optional_monitor() {
+    let args: Vec<String> = vec![
+        "sheila",
+        "--verbose",
+        "client",
+        "display",
+        "--monitor",
+        "eDP-1",
+        "image.png",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect();
+
+    // actual
+    let actual = parse(args).unwrap();
+
+    match actual.command {
+        Commands::Client(client_args) => match client_args.command {
+            ClientSubCommands::Display(args) => {
+                assert_eq!(Some(String::from("eDP-1")), args.monitor);
             }
             _ => panic!("unexpected subcommand"),
         },
