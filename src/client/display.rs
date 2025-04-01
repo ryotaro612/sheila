@@ -10,24 +10,13 @@ pub(crate) fn display(
     id: &str,
     args: parser::DisplayArgs,
 ) -> Result<String, String> {
-    let response = cli
-        .send(
-            id,
-            "display",
-            json!({"file": args.file, "monitor": Option::<String>::None}),
-        )
-        .map_err(|e| e.to_string())?;
+    cli.send(
+        id,
+        "display",
+        json!({"file": args.file, "monitor": Option::<String>::None}),
+    )
+    .map_err(|e| e.to_string())?;
 
-    if response["jsonrpc"] != "2.0" {
-        return Err(format!("the response is not a JSON-RPC 2.0 response"));
-    }
-
-    if response["id"] != id {
-        return Err(format!(
-            "the id of the response is not the same as the id of the request: {}, {}",
-            id, response["id"]
-        ));
-    }
     Ok("".to_string())
 }
 
@@ -53,12 +42,11 @@ mod tests {
         cli.expect_send()
             .with(eq(id), eq("display".to_string()), eq(params))
             .returning(|_a, _b, _c| {
-                let res: std::result::Result<serde_json::Value, std::io::Error> =
-                    Ok(serde_json::json!({
-                        "jsonrpc": "2.0",
-                        "id": "abc",
-                        "result": {}
-                    }));
+                let res: std::result::Result<serde_json::Value, String> = Ok(serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "id": "abc",
+                    "result": {}
+                }));
                 res
             });
 

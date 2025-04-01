@@ -1,5 +1,4 @@
 use serde_json::json;
-use std::io;
 use std::io::Read;
 use std::io::Write;
 use std::net;
@@ -21,12 +20,11 @@ pub(crate) trait Client {
         id: &str,
         method: &str,
         params: serde_json::Value,
-    ) -> result::Result<serde_json::Value, io::Error>;
+    ) -> result::Result<serde_json::Value, String>;
 
     /**
      */
-    fn send_method(&self, id: String, method: &str)
-        -> result::Result<serde_json::Value, io::Error>;
+    fn send_method(&self, id: String, method: &str) -> result::Result<serde_json::Value, String>;
 }
 
 pub(crate) struct SocketClient {
@@ -39,7 +37,7 @@ impl Client for SocketClient {
         id: &str,
         method: &str,
         params: serde_json::Value,
-    ) -> result::Result<serde_json::Value, io::Error> {
+    ) -> result::Result<serde_json::Value, String> {
         let request = json!({
             "jsonrpc": "2.0",
             "method": method,
@@ -49,11 +47,7 @@ impl Client for SocketClient {
         self.request(request)
     }
 
-    fn send_method(
-        &self,
-        id: String,
-        method: &str,
-    ) -> result::Result<serde_json::Value, io::Error> {
+    fn send_method(&self, id: String, method: &str) -> result::Result<serde_json::Value, String> {
         let request = json!({
             "jsonrpc": "2.0",
             "method": method,
@@ -69,15 +63,31 @@ impl SocketClient {
             socket: socket.clone(),
         }
     }
-    fn request(&self, payload: serde_json::Value) -> result::Result<serde_json::Value, io::Error> {
-        let mut stream = std::os::unix::net::UnixStream::connect(&self.socket)?;
-        stream.write_all(payload.to_string().as_bytes())?;
-        stream.shutdown(net::Shutdown::Write)?;
+    fn request(&self, payload: serde_json::Value) -> result::Result<serde_json::Value, String> {
+        let mut stream =
+            std::os::unix::net::UnixStream::connect(&self.socket).map_err(|e| e.to_string())?;
+        stream
+            .write_all(payload.to_string().as_bytes())
+            .map_err(|e| e.to_string())?;
+        stream
+            .shutdown(net::Shutdown::Write)
+            .map_err(|e| e.to_string())?;
         // stream.read_timeout();
         let mut message = String::new();
-        stream.read_to_string(&mut message)?;
-        let v: serde_json::Value = serde_json::from_str(&message)?;
+        stream
+            .read_to_string(&mut message)
+            .map_err(|e| e.to_string())?;
+        let v: serde_json::Value = serde_json::from_str(&message).map_err(|e| e.to_string())?;
         log::debug!("received: {message}");
+        if v["jsonrpc"] != "2.0" {
+            return Err(format!("the response is not a JSON-RPC 2.0 response"));
+        }
+        if payload["id"] != v["id"] {
+            return Err(format!(
+                "The id of the response is not the same as the id of the request: request:{}, response: {}",
+                payload["id"], v["id"]
+            ));
+        }
         Ok(v)
     }
 }
