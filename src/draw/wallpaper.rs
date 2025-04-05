@@ -1,14 +1,11 @@
-use crate::command;
 use crate::draw::monitor;
 use gtk4::prelude::*;
 use gtk4::{glib, Application, ApplicationWindow};
 
 pub(crate) trait Wallpaper {
     fn new_application() -> impl Wallpaper;
+    fn application(&self) -> &gtk4::Application;
     fn start(&self) -> glib::ExitCode;
-    fn display(&self);
-    fn terminate(&self);
-    fn execute(&self, cmd: command::Command) -> Option<command::ErrorReason>;
 }
 
 impl Wallpaper for gtk4::Application {
@@ -19,28 +16,15 @@ impl Wallpaper for gtk4::Application {
         app.connect_activate(build_ui);
         app
     }
-    fn terminate(&self) {
-        self.quit();
-    }
 
-    fn execute(&self, cmd: command::Command) -> Option<command::ErrorReason> {
-        None
+    fn application(&self) -> &gtk4::Application {
+        self
     }
 
     fn start(&self) -> glib::ExitCode {
         let args: &[String] = &[];
         // if run() is called, app interprets command line arguments
         self.run_with_args(args)
-    }
-    fn display(&self) {
-        // Create a window and set the title
-        let window = ApplicationWindow::builder()
-            .application(self)
-            .title("My GTK App")
-            .build();
-
-        // Present window
-        window.present();
     }
 }
 

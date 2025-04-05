@@ -20,7 +20,7 @@ impl<'a> Handler for DefaultHandler<'a> {
 impl<'a> DefaultHandler<'a> {
     pub(crate) fn new(
         command_sender: &'a mpsc::Sender<command::Command>,
-        result_receiver: &'a mpsc::Receiver<Option<command::ErrorReason>>,
+        result_receiver: &'a mpsc::Receiver<Result<serde_json::Value, command::ErrorReason>>,
     ) -> Self {
         DefaultHandler {
             command_sender,
@@ -59,7 +59,7 @@ impl<'a> DefaultHandler<'a> {
         })?;
 
         match response {
-            Some(err_reason) => match err_reason {
+            Err(err_reason) => match err_reason {
                 command::ErrorReason::InvalidParams { reason } => {
                     Err(response::Response::InvalidParams {
                         id: json_rpc_request.id.clone(),
@@ -73,8 +73,9 @@ impl<'a> DefaultHandler<'a> {
                     })
                 }
             },
-            None => Ok(response::Response::Success {
+            Ok(v) => Ok(response::Response::Success {
                 id: json_rpc_request.id.clone(),
+                result: v,
             }),
         }
     }
@@ -82,7 +83,7 @@ impl<'a> DefaultHandler<'a> {
 
 pub(crate) struct DefaultHandler<'a> {
     command_sender: &'a mpsc::Sender<crate::command::Command>,
-    result_receiver: &'a mpsc::Receiver<Option<command::ErrorReason>>,
+    result_receiver: &'a mpsc::Receiver<Result<serde_json::Value, command::ErrorReason>>,
 }
 
 #[cfg(test)]
@@ -91,7 +92,8 @@ mod tests {
     #[test]
     fn test_return_parse_error_if_malfored_json_was_passed() {
         let (sender, _) = mpsc::channel();
-        let (_, result_receiver) = mpsc::channel::<Option<command::ErrorReason>>();
+        let (_, result_receiver) =
+            mpsc::channel::<Result<serde_json::Value, command::ErrorReason>>();
 
         let handler = DefaultHandler::new(&sender, &result_receiver);
 
