@@ -3,8 +3,6 @@
  */
 use std::{io::Write, os::unix::net};
 
-use serde_json::json;
-
 impl Response {
     fn response_as_string(&self) -> String {
         match self {

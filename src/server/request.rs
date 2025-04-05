@@ -5,7 +5,6 @@ use crate::command;
 use crate::server::response;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::option;
 use std::result;
 /**
  *
@@ -34,7 +33,7 @@ pub(crate) fn make_command(
 pub(crate) struct JsonRpcRequest {
     jsonrpc: String,
     method: String,
-    params: option::Option<serde_json::Value>,
+    params: Option<serde_json::Value>,
     pub(crate) id: String,
 }
 
@@ -44,7 +43,7 @@ trait DisplayCommandPresenter {
 
 impl DisplayCommandPresenter for JsonRpcRequest {
     fn as_display_cmd(&self) -> Result<command::Command, String> {
-        let params = self.params.as_ref().ok_or("Missing params")?;
+        let params = self.params.as_ref().ok_or("params is required")?;
         let file = params
             .get("file")
             .ok_or("file is required.")?
@@ -69,7 +68,17 @@ impl DisplayCommandPresenter for JsonRpcRequest {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt;
+
     use super::*;
+
+    #[test]
+    fn json_rpc_request_can_omit_parans() {
+        let result = serde_json::from_str::<JsonRpcRequest>(
+            r#"{"jsonrpc":"2.0","method":"status","id":"id"}"#,
+        );
+        assert!(result.is_ok());
+    }
 
     #[test]
     fn test_method_stop_is_stop_command() {

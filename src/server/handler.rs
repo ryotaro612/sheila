@@ -100,9 +100,11 @@ pub(crate) struct DefaultHandler<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
+
     use super::*;
     #[test]
-    fn test_return_parse_error_if_malfored_json_was_passed() {
+    fn malformed_json_make_parse_error() {
         let (sender, _) = mpsc::channel();
         let (_, result_receiver) =
             mpsc::channel::<Result<serde_json::Value, command::ErrorReason>>();

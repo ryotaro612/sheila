@@ -11,11 +11,7 @@ pub(crate) fn display(
     args: parser::DisplayArgs,
 ) -> Result<String, String> {
     let result = cli
-        .send(
-            id,
-            "display",
-            json!({"file": args.file, "monitor": Option::<String>::None}),
-        )
+        .send(id, "display", json!({"file": args.file}))
         .map_err(|e| e.to_string())?;
 
     match result.get("error") {
@@ -45,7 +41,6 @@ mod tests {
         let mut cli = client::MockClient::new();
         let params = serde_json::json!({
             "file": args.file,
-            "monitor": Option::<String>::None,
         });
         cli.expect_send()
             .with(eq(id), eq("display".to_string()), eq(params))
@@ -74,8 +69,8 @@ mod tests {
         let mut cli = client::MockClient::new();
         let params = serde_json::json!({
             "file": args.file,
-            "monitor": Option::<String>::None,
         });
+
         cli.expect_send()
             .with(eq(id), eq("display".to_string()), eq(params))
             .returning(|_a, _b, _c| {
