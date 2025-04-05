@@ -52,6 +52,7 @@ impl DisplayCommandPresenter for JsonRpcRequest {
             .ok_or("file is not a string")?;
         match params.get("monitor") {
             Some(m) => {
+                log::debug!("monitor: {}", m);
                 let monitor = m.as_str().ok_or("monitor is not a string")?;
                 Ok(command::Command::Display {
                     file: file.to_string(),
