@@ -3,11 +3,15 @@ use crate::server::request::{self, make_command};
 use crate::server::response;
 use serde_json;
 use std::sync::mpsc;
-
+/**
+ *
+ */
 pub(crate) trait Handler {
     fn handle(&self, request: &str) -> response::Response;
 }
-
+/**
+ *
+ */
 impl<'a> Handler for DefaultHandler<'a> {
     fn handle(&self, request: &str) -> response::Response {
         match self.process(request) {
@@ -16,7 +20,9 @@ impl<'a> Handler for DefaultHandler<'a> {
         }
     }
 }
-
+/**
+ *
+ */
 impl<'a> DefaultHandler<'a> {
     pub(crate) fn new(
         command_sender: &'a mpsc::Sender<command::Command>,

@@ -25,6 +25,10 @@ impl State {
                 Ok(serde_json::Value::Null)
             }
             command::Command::Status { .. } => Ok(serde_json::json!({})),
+            command::Command::Display { file, monitor } => {
+                log::debug!("display command: file: {}, monitor: {:?}", file, monitor);
+                Ok(serde_json::json!({}))
+            }
         }
     }
 }
