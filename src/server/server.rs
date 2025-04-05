@@ -19,8 +19,11 @@ impl<H: handler::Handler> Drop for Server<H> {
 
 impl<H: handler::Handler> Server<H> {
     /** */
-    pub(crate) fn new(socket: String, handler: H) -> Self {
-        return Server { socket, handler };
+    pub(crate) fn new(socket: &str, handler: H) -> Self {
+        return Server {
+            socket: socket.to_string(),
+            handler,
+        };
     }
     /** */
     pub(crate) fn start(&self) -> result::Result<(), io::Error> {

@@ -58,9 +58,9 @@ impl Client for SocketClient {
 }
 
 impl SocketClient {
-    pub(crate) fn new(socket: &String) -> Self {
+    pub(crate) fn new(socket: &str) -> Self {
         SocketClient {
-            socket: socket.clone(),
+            socket: socket.to_string(),
         }
     }
     fn request(&self, payload: serde_json::Value) -> result::Result<serde_json::Value, String> {

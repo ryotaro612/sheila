@@ -1,8 +1,8 @@
 use uuid::Uuid;
-mod client;
+pub(crate) mod client;
 mod display;
-mod status;
-mod stop;
+pub(crate) mod status;
+pub(crate) mod stop;
 
 use crate::parser::ClientSubCommands;
 
@@ -27,7 +27,9 @@ pub(crate) fn run(
         Err(s) => Err(s),
     }
 }
-
-fn generate_id() -> String {
+/**
+ *
+ */
+pub(crate) fn generate_id() -> String {
     Uuid::new_v4().to_string()
 }
