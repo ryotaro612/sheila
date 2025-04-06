@@ -7,6 +7,9 @@ use gdk4::prelude::MonitorExt;
 use gio::prelude::*;
 use glib::Object;
 
+/**
+ * Detects monitors and returns a list of them.
+ */
 pub(crate) fn detect_monitors() -> Result<Monitors, String> {
     let display = detect_display()?;
     let monitors_list_model = display.monitors();
@@ -48,7 +51,7 @@ pub(crate) fn detect_monitors() -> Result<Monitors, String> {
 }
 
 #[derive(Debug)]
-struct Monitor {
+pub(crate) struct Monitor {
     connector: String,
     x: i32,
     y: i32,
@@ -61,8 +64,25 @@ pub(crate) struct Monitors {
     monitors: Vec<Monitor>,
 }
 
-impl Monitors {}
+/**
+ *
+ */
+impl Monitors {
+    /**
+     * Returns the primary monitor.
+     */
+    pub(crate) fn first(&self) -> Option<String> {
+        if 0 < self.monitors.len() {
+            Some(self.monitors[0].connector.clone())
+        } else {
+            None
+        }
+    }
+}
 
+/**
+ *
+ */
 fn detect_display() -> Result<gdk4::Display, String> {
     //  gdk4::Display::open(None).unwrap(); or wayland-1 WAYLAND_DISPLAY env
     gdk4::Display::default().ok_or(String::from("failed to detect a display"))
