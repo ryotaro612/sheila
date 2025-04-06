@@ -7,6 +7,18 @@ use gdk4::prelude::MonitorExt;
 use gio::prelude::*;
 use glib::Object;
 
+trait MonitorDetector {
+    fn detect_monitors() -> Result<Monitors, String>;
+}
+
+struct GtkMonitorDetector {}
+
+impl MonitorDetector for GtkMonitorDetector {
+    fn detect_monitors() -> Result<Monitors, String> {
+        detect_monitors()
+    }
+}
+
 /**
  * Detects monitors and returns a list of them.
  */
