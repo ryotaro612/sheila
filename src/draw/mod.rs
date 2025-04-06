@@ -38,10 +38,12 @@ impl<'a> Drawer<'a> {
             app,
             async move {
                 let mut state = state::State::new();
+
                 let mut f = glib::clone!(
                     #[weak]
                     app,
                     move |cmd: Command| {
+                        log::debug!("command: {cmd:?}");
                         let res = state.execute(&app, &cmd);
                         if let Err(e) = sender.send(res) {
                             log::error!("disconnected: {e}");
@@ -50,7 +52,9 @@ impl<'a> Drawer<'a> {
                     }
                 );
                 loop {
+                    log::debug!("waiting receive");
                     let res = dr::ReceivedFuture::new(arc_receiver.clone()).await;
+                    log::debug!("received: {res:?}");
                     match res {
                         Ok(cmd) => f(cmd),
                         Err(r_err) => {

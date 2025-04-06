@@ -39,6 +39,7 @@ impl<T: Clone + Debug + Send + 'static> std::future::Future for ReceivedFuture<T
             let waker = ctx.waker().clone();
             thread::spawn(move || {
                 let received = rev.lock().unwrap().recv();
+
                 res.lock().unwrap().replace(received);
                 waker.wake_by_ref();
             });

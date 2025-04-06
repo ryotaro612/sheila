@@ -16,9 +16,12 @@ pub(crate) trait Wallpaper {
 impl Wallpaper for gtk4::Application {
     fn new_application() -> gtk4::Application {
         //app.connect_activate(build_ui);
-        Application::builder()
+        let app = Application::builder()
             .application_id("dev.ryotaro.sheila")
-            .build()
+            .build();
+
+        //app.connect_activate(build_ui);
+        app
     }
 
     fn stop(&self) {
