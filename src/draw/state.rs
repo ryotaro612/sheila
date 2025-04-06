@@ -51,7 +51,7 @@ impl State {
                         })?
                     }
                 };
-                wallpaper.display(&connector, file);
+                wallpaper.display(&connector, file)?;
 
                 Ok(serde_json::json!({}))
             }

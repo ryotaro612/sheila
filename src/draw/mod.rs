@@ -30,8 +30,8 @@ impl<'a> Drawer<'a> {
      */
     pub(crate) fn run(self) -> result::Result<(), String> {
         let sender = self.result_sender.clone();
-        let app = <gtk4::Application as wallpaper::Wallpaper>::new_application();
         let arc_receiver = sync::Arc::new(sync::Mutex::new(self.command_receiver));
+        let app = <gtk4::Application as wallpaper::Wallpaper>::new_application()?;
 
         glib::spawn_future_local(glib::clone!(
             #[weak]
@@ -43,7 +43,6 @@ impl<'a> Drawer<'a> {
                     #[weak]
                     app,
                     move |cmd: Command| {
-                        log::debug!("command: {cmd:?}");
                         let res = state.execute(&app, &cmd);
                         if let Err(e) = sender.send(res) {
                             log::error!("disconnected: {e}");
@@ -52,9 +51,7 @@ impl<'a> Drawer<'a> {
                     }
                 );
                 loop {
-                    log::debug!("waiting receive");
                     let res = dr::ReceivedFuture::new(arc_receiver.clone()).await;
-                    log::debug!("received: {res:?}");
                     match res {
                         Ok(cmd) => f(cmd),
                         Err(r_err) => {
