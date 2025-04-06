@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::result;
 
+use gstreamer::prelude::ElementExt;
+
 use crate::{
     command,
     draw::{monitor::detect_primary_monitor, wallpaper},
@@ -10,6 +12,7 @@ use crate::{
  */
 pub(crate) struct State {
     is_running: bool,
+    connector_watch: HashMap<String, gstreamer::bus::BusWatchGuard>,
 }
 
 /**
@@ -17,7 +20,10 @@ pub(crate) struct State {
  */
 impl State {
     pub(crate) fn new() -> Self {
-        State { is_running: true }
+        State {
+            is_running: true,
+            connector_watch: HashMap::new(),
+        }
     }
 
     /**
@@ -51,7 +57,29 @@ impl State {
                         })?
                     }
                 };
-                wallpaper.display(&connector, file)?;
+                let element = wallpaper.display(&connector, file)?;
+                let watcher = element
+                    .bus()
+                    .unwrap()
+                    .add_watch_local(move |bus, msg| {
+                        log::debug!("msg: {:?}", msg);
+                        match msg.view() {
+                            gstreamer::MessageView::Eos(..) => {
+                                log::debug!("stop");
+                                element.set_state(gstreamer::State::Null).unwrap();
+                                element.set_state(gstreamer::State::Playing).unwrap();
+                            }
+                            // MessageView::Error(err) => {
+                            //     log::error!("error: {}", err.error());
+                            //     factory.set_state(gstreamer::State::Null).unwrap();
+                            // }
+                            _ => (),
+                        }
+                        glib::ControlFlow::Continue
+                    })
+                    .unwrap();
+
+                self.connector_watch.insert(connector, watcher);
 
                 Ok(serde_json::json!({}))
             }

@@ -1,6 +1,7 @@
 use std::thread;
 
 use gstreamer;
+use gstreamer::ffi::GstStreamType;
 use gstreamer::prelude::{ElementExt, ElementExtManual, GstBinExtManual};
 use gtk4::{glib, Application, Window};
 use gtk4::{prelude::*, Picture};
@@ -14,7 +15,11 @@ pub(crate) trait Wallpaper {
     fn new_application() -> Result<impl Wallpaper, String>;
     fn stop(&self);
     fn start(&self) -> glib::ExitCode;
-    fn display(&self, monitor: &str, file: &str) -> Result<(), command::ErrorReason>;
+    fn display(
+        &self,
+        monitor: &str,
+        file: &str,
+    ) -> Result<gstreamer::Element, command::ErrorReason>;
     fn find_window(&self, monitor: &str) -> Option<Window>;
     fn init_window(&self, monitor: &str) -> Result<Window, String>;
 }
@@ -32,6 +37,9 @@ impl Wallpaper for gtk4::Application {
     }
 
     fn stop(&self) {
+        unsafe {
+            gstreamer::deinit();
+        }
         self.quit();
     }
 
@@ -46,7 +54,11 @@ impl Wallpaper for gtk4::Application {
 
     * https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
     */
-    fn display(&self, connector: &str, file: &str) -> Result<(), command::ErrorReason> {
+    fn display(
+        &self,
+        connector: &str,
+        file: &str,
+    ) -> Result<gstreamer::Element, command::ErrorReason> {
         let window: gtk4::Window = match self.find_window(connector) {
             Some(window) => Ok::<Window, command::ErrorReason>(window),
             None => match self.init_window(connector) {
@@ -102,32 +114,30 @@ impl Wallpaper for gtk4::Application {
             }
         })?;
 
-        thread::spawn(|| {
-            factory
-                .bus()
-                .unwrap()
-                .add_watch_local(move |bus, msg| {
-                    log::debug!("msg: {:?}", msg);
-                    match msg.view() {
-                        gstreamer::MessageView::Eos(..) => {
-                            log::debug!("stop");
-                            factory.set_state(gstreamer::State::Null).unwrap();
-                            factory.set_state(gstreamer::State::Playing).unwrap();
-                        }
-                        // MessageView::Error(err) => {
-                        //     log::error!("error: {}", err.error());
-                        //     factory.set_state(gstreamer::State::Null).unwrap();
-                        // }
-                        _ => (),
-                    }
-                    glib::ControlFlow::Continue
-                })
-                .unwrap();
-        });
+        // let bus_watch_guard = factory
+        //     .bus()
+        //     .unwrap()
+        //     .add_watch_local(move |bus, msg| {
+        //         log::debug!("msg: {:?}", msg);
+        //         match msg.view() {
+        //             gstreamer::MessageView::Eos(..) => {
+        //                 log::debug!("stop");
+        //                 factory.set_state(gstreamer::State::Null).unwrap();
+        //                 factory.set_state(gstreamer::State::Playing).unwrap();
+        //             }
+        //             // MessageView::Error(err) => {
+        //             //     log::error!("error: {}", err.error());
+        //             //     factory.set_state(gstreamer::State::Null).unwrap();
+        //             // }
+        //             _ => (),
+        //         }
+        //         glib::ControlFlow::Continue
+        //     })
+        //     .unwrap();
 
         window.present();
 
-        Ok(())
+        Ok(factory)
     }
 
     fn find_window(&self, connector: &str) -> Option<Window> {

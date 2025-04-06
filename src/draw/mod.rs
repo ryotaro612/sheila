@@ -64,17 +64,12 @@ impl<'a> Drawer<'a> {
             }
         ));
 
-        let res = match app.start() {
+        match app.start() {
             glib::ExitCode::SUCCESS => Ok(()),
             code => Err(format!(
                 "the wallpaper exits with unexpected status code: {}",
                 code.value()
             )),
-        };
-
-        unsafe {
-            gstreamer::deinit();
-        };
-        res
+        }
     }
 }
