@@ -1,5 +1,7 @@
+use std::thread;
+
 use gstreamer;
-use gstreamer::prelude::ElementExt;
+use gstreamer::prelude::{ElementExt, ElementExtManual, GstBinExtManual};
 use gtk4::{glib, Application, Window};
 use gtk4::{prelude::*, Picture};
 use gtk4_layer_shell::LayerShell;
@@ -40,8 +42,10 @@ impl Wallpaper for gtk4::Application {
     }
 
     /**
-     * https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
-     */
+    * $  gst-launch-1.0 playbin uri=a.mp4 mute=true video-sink="videoconvert  ! aspectratiocrop aspect-ratio=9/9 ! gtk4paintablesink sync=false"
+
+    * https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
+    */
     fn display(&self, connector: &str, file: &str) -> Result<(), command::ErrorReason> {
         let window: gtk4::Window = match self.find_window(connector) {
             Some(window) => Ok::<Window, command::ErrorReason>(window),
@@ -52,7 +56,13 @@ impl Wallpaper for gtk4::Application {
                 }),
             },
         }?;
-
+        let videoconvert = gstreamer::ElementFactory::make("videoconvert")
+            .build()
+            .unwrap();
+        let aspectratiocrop = gstreamer::ElementFactory::make("aspectratiocrop")
+            .property("aspect-ratio", gstreamer::Fraction::new(16, 10))
+            .build()
+            .unwrap();
         let sink = gstreamer::ElementFactory::make("gtk4paintablesink")
             .property("sync", false)
             .build()
@@ -60,13 +70,22 @@ impl Wallpaper for gtk4::Application {
                 reason: e.to_string(),
             })?;
 
+        let bin = gstreamer::Bin::new();
+        bin.add_many(&[&videoconvert, &aspectratiocrop, &sink])
+            .unwrap();
+        videoconvert.link(&aspectratiocrop).unwrap();
+        aspectratiocrop.link(&sink).unwrap();
+        //gstreamer::Element::link_many(&[&videoconvert, &aspectratiocrop, &sink]).unwrap();
+        bin.add_pad(
+            &gstreamer::GhostPad::with_target(&videoconvert.static_pad("sink").unwrap()).unwrap(),
+        )
+        .unwrap();
+
         let paintable = sink.property::<gdk4::Paintable>("paintable");
-        let uri = format!("file://{}", file);
-        log::debug!("{}", uri);
         let factory = gstreamer::ElementFactory::make("playbin")
             .property("uri", format!("file://{}", file))
             .property("mute", true)
-            .property("video-sink", sink)
+            .property("video-sink", bin)
             .build()
             .map_err(|e| command::ErrorReason::ServerError {
                 reason: e.to_string(),
@@ -82,6 +101,29 @@ impl Wallpaper for gtk4::Application {
                 reason: format!("failed to set state: {e}"),
             }
         })?;
+
+        thread::spawn(|| {
+            factory
+                .bus()
+                .unwrap()
+                .add_watch_local(move |bus, msg| {
+                    log::debug!("msg: {:?}", msg);
+                    match msg.view() {
+                        gstreamer::MessageView::Eos(..) => {
+                            log::debug!("stop");
+                            factory.set_state(gstreamer::State::Null).unwrap();
+                            factory.set_state(gstreamer::State::Playing).unwrap();
+                        }
+                        // MessageView::Error(err) => {
+                        //     log::error!("error: {}", err.error());
+                        //     factory.set_state(gstreamer::State::Null).unwrap();
+                        // }
+                        _ => (),
+                    }
+                    glib::ControlFlow::Continue
+                })
+                .unwrap();
+        });
 
         window.present();
 
