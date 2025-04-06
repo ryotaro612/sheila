@@ -4,21 +4,20 @@ use gtk4::{glib, Application, ApplicationWindow};
 
 pub(crate) trait Wallpaper {
     fn new_application() -> impl Wallpaper;
-    fn application(&self) -> &gtk4::Application;
+    fn stop(&self);
     fn start(&self) -> glib::ExitCode;
 }
 
 impl Wallpaper for gtk4::Application {
     fn new_application() -> gtk4::Application {
-        let app = Application::builder()
+        //app.connect_activate(build_ui);
+        Application::builder()
             .application_id("dev.ryotaro.sheila")
-            .build();
-        app.connect_activate(build_ui);
-        app
+            .build()
     }
 
-    fn application(&self) -> &gtk4::Application {
-        self
+    fn stop(&self) {
+        self.quit();
     }
 
     fn start(&self) -> glib::ExitCode {
@@ -30,14 +29,12 @@ impl Wallpaper for gtk4::Application {
 
 fn build_ui(app: &Application) {
     // Create a window and set the title
+    // let windows = app.windows();
 
-    let monitors = monitor::detect_monitors();
-    let windows = app.windows();
-
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("My GTK App")
-        .build();
+    // let window = ApplicationWindow::builder()
+    //     .application(app)
+    //     .title("My GTK App")
+    //     .build();
 
     // Present window
     //window.present();

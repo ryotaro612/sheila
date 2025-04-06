@@ -1,3 +1,6 @@
+use std::env;
+use std::path::{Path, PathBuf};
+
 use crate::client::client;
 use crate::parser;
 use serde_json::json;
@@ -10,8 +13,15 @@ pub(crate) fn display(
     id: &str,
     args: parser::DisplayArgs,
 ) -> Result<String, String> {
+    let p = Path::new(&args.file)
+        .canonicalize()
+        .map_err(|e| e.to_string())?
+        .to_str()
+        .ok_or("failed to make the file path canonical")?
+        .to_string();
+
     let result = cli
-        .send(id, "display", json!({"file": args.file}))
+        .send(id, "display", json!({"file": p}))
         .map_err(|e| e.to_string())?;
 
     match result.get("error") {
@@ -32,38 +42,41 @@ mod tests {
     use mockall::predicate::*;
 
     #[test]
-    fn display_command_sends_a_file_path() {
+    fn test_display_command_sends_file_path() {
+        // arrange
         let id = "abc";
         let args = parser::DisplayArgs {
-            file: "image.png".to_string(),
+            file: "Cargo.toml".to_string(),
             monitor: None,
         };
         let mut cli = client::MockClient::new();
-        let params = serde_json::json!({
-            "file": args.file,
+
+        cli.expect_send().returning(|id, method, params| {
+            assert_eq!("abc", id);
+            assert_eq!("display", method);
+            let f = params["file"].as_str().unwrap();
+            assert!(f.ends_with("Cargo.toml"));
+
+            let res: std::result::Result<serde_json::Value, String> = Ok(serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": "abc",
+                "result": {}
+            }));
+            res
         });
-        cli.expect_send()
-            .with(eq(id), eq("display".to_string()), eq(params))
-            .returning(|_a, _b, _c| {
-                let res: std::result::Result<serde_json::Value, String> = Ok(serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "id": "abc",
-                    "result": {}
-                }));
-                res
-            });
-
+        // act
         let result = display(&cli, id, args);
-        assert_eq!(Ok("".to_string()), result);
 
+        // assert
+        assert_eq!(Ok("".to_string()), result);
         cli.checkpoint();
     }
 
     #[test]
-    fn display_command_returns_error_if_the_server_sent_an_error() {
+    fn test_display_command_returns_error_on_server_error() {
         let id = "abc";
         let args = parser::DisplayArgs {
-            file: "image.png".to_string(),
+            file: "/image.png".to_string(),
             monitor: None,
         };
         let mut cli = client::MockClient::new();

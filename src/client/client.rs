@@ -78,7 +78,6 @@ impl SocketClient {
             .read_to_string(&mut message)
             .map_err(|e| e.to_string())?;
         let v: serde_json::Value = serde_json::from_str(&message).map_err(|e| e.to_string())?;
-        log::debug!("received: {message}");
         if v["jsonrpc"] != "2.0" {
             return Err(format!("the response is not a JSON-RPC 2.0 response"));
         }

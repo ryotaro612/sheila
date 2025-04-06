@@ -37,11 +37,10 @@ impl<'a> Drawer<'a> {
             #[weak]
             app,
             async move {
-                let state = state::State::new();
-                let f = glib::clone!(
+                let mut state = state::State::new();
+                let mut f = glib::clone!(
                     #[weak]
                     app,
-                    // pass state
                     move |cmd: Command| {
                         let res = state.execute(&app, &cmd);
                         if let Err(e) = sender.send(res) {
@@ -50,7 +49,6 @@ impl<'a> Drawer<'a> {
                         }
                     }
                 );
-
                 loop {
                     let res = dr::ReceivedFuture::new(arc_receiver.clone()).await;
                     match res {
@@ -62,7 +60,6 @@ impl<'a> Drawer<'a> {
                         }
                     }
                 }
-                //app.terminate();
             }
         ));
 

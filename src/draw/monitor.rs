@@ -36,6 +36,7 @@ pub(crate) fn detect_monitors() -> Result<Monitors, String> {
         })
         .filter_map(|f| f.ok())
         .collect();
+
     match monitors.len() {
         0 => {
             return Err(String::from("no monitors detected"));
@@ -46,6 +47,7 @@ pub(crate) fn detect_monitors() -> Result<Monitors, String> {
     }
 }
 
+#[derive(Debug)]
 struct Monitor {
     connector: String,
     x: i32,
@@ -54,6 +56,7 @@ struct Monitor {
     height: i32,
 }
 
+#[derive(Debug)]
 pub(crate) struct Monitors {
     monitors: Vec<Monitor>,
 }
