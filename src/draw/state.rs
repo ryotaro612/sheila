@@ -1,19 +1,15 @@
 use std::collections::HashMap;
 use std::result;
 
-use gio::prelude::ApplicationExt;
-use serde::de;
-
 use crate::{
     command,
-    draw::{monitor::detect_monitors, wallpaper},
+    draw::{monitor::detect_primary_monitor, wallpaper},
 };
 /**
  *
  */
 pub(crate) struct State {
     is_running: bool,
-    monitors: HashMap<String, bool>,
 }
 
 /**
@@ -21,10 +17,7 @@ pub(crate) struct State {
  */
 impl State {
     pub(crate) fn new() -> Self {
-        State {
-            is_running: true,
-            monitors: HashMap::new(),
-        }
+        State { is_running: true }
     }
 
     /**
@@ -49,18 +42,19 @@ impl State {
                     });
                 }
                 log::debug!("display command: file: {}, monitor: {:?}", file, monitor);
-                let monitors = detect_monitors()
-                    .map_err(|e| command::ErrorReason::ServerError { reason: e })?;
 
-                let monitor = monitors.first().ok_or(command::ErrorReason::ServerError {
-                    reason: "no monitors were detected".to_string(),
-                })?;
+                let connector = match monitor {
+                    Some(m) => m.to_string(),
+                    None => {
+                        detect_primary_monitor().map_err(|e| command::ErrorReason::ServerError {
+                            reason: e.to_string(),
+                        })?
+                    }
+                };
+                wallpaper.display(&connector, file);
 
-                log::debug!("monitors: {:?}", monitors);
                 Ok(serde_json::json!({}))
             }
         }
     }
-
-    pub(crate) fn up(&mut self, monitor: String) {}
 }
