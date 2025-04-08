@@ -63,6 +63,7 @@ impl State {
                     .unwrap()
                     .add_watch_local(move |bus, msg| {
                         log::debug!("msg: {:?}", msg);
+                        log::debug!("msg: {:?}", msg.view());
                         match msg.view() {
                             gstreamer::MessageView::Eos(..) => {
                                 log::debug!("stop");
