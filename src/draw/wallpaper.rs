@@ -18,6 +18,9 @@ pub(crate) trait Wallpaper {
      *
      */
     fn stop(&self);
+    /**
+     *
+     */
     fn display(
         &self,
         monitor: &Option<String>,

@@ -7,6 +7,22 @@ use gdk4::prelude::MonitorExt;
 use gio::prelude::*;
 use glib::Object;
 
+pub(crate) fn detect_gdk_monitor(connector: &Option<String>) -> Result<gdk4::Monitor, String> {
+    let monitors = detect_gdk_monitors()?;
+
+    match connector {
+        Some(c) => monitors
+            .iter()
+            .find(|m| m.connector().unwrap_or_default() == *c)
+            .map(|m| m.clone())
+            .ok_or(format!("monitor not found: {}", c)),
+        None => monitors
+            .get(0)
+            .map(|m| m.clone())
+            .ok_or("monitors were not found".to_string()),
+    }
+}
+
 /**
  *
  */
@@ -25,28 +41,6 @@ fn detect_gdk_monitors() -> Result<Vec<gdk4::Monitor>, String> {
         .filter_map(|f: Result<gdk4::Monitor, String>| f.ok())
         .collect();
     Ok(monitors)
-}
-pub(crate) fn detect_gdk_monitor(connector: &str) -> Result<gdk4::Monitor, String> {
-    let monitors = detect_gdk_monitors()?;
-    let monitor = monitors
-        .iter()
-        .find(|m| m.connector().unwrap_or_default() == connector)
-        .map(|m| m)
-        .ok_or(format!("monitor not found: {}", connector))?;
-
-    Ok(monitor.clone())
-}
-
-pub(crate) fn detect_primary_monitor() -> Result<String, String> {
-    let monitors = detect_gdk_monitors()?;
-    let c: Vec<String> = monitors
-        .iter()
-        .filter_map(|m| m.connector())
-        .map(|e| e.to_string())
-        .collect();
-    c.get(0)
-        .map(|x| x.to_string())
-        .ok_or("there aren't any monitors".to_string())
 }
 
 /**
