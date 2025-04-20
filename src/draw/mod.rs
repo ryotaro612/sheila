@@ -3,6 +3,7 @@ mod monitor;
 mod receiver;
 mod state;
 mod wallpaper;
+mod window;
 use crate::draw::receiver as dr;
 use gtk4::glib;
 use std::result;

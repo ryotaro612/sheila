@@ -4,9 +4,9 @@ use gtk4::{glib, Application, Window};
 use gtk4::{prelude::*, Picture};
 use gtk4_layer_shell::LayerShell;
 
-use crate::command;
+use crate::command::{self, make_server_error};
 
-use super::monitor::detect_gdk_monitor;
+use super::window::{get_rectangle, init_window};
 
 pub(crate) trait Wallpaper {
     fn new_application() -> Result<impl Wallpaper, String>;
@@ -25,9 +25,7 @@ pub(crate) trait Wallpaper {
         &self,
         monitor: &Option<String>,
         file: &str,
-    ) -> Result<gstreamer::Element, command::ErrorReason>;
-    fn find_window(&self, monitor: &str) -> Option<Window>;
-    fn init_window(&self, monitor: &str) -> Result<Window, String>;
+    ) -> Result<(gtk4::Window, gstreamer::Element), command::ErrorReason>;
 }
 
 impl Wallpaper for gtk4::Application {
@@ -63,21 +61,17 @@ impl Wallpaper for gtk4::Application {
         &self,
         connector: &Option<String>,
         file: &str,
-    ) -> Result<gstreamer::Element, command::ErrorReason> {
-        let window: gtk4::Window = match self.find_window(connector) {
-            Some(window) => Ok::<Window, command::ErrorReason>(window),
-            None => match self.init_window(connector) {
-                Ok(window) => Ok(window),
-                Err(e) => Err(command::ErrorReason::ServerError {
-                    reason: format!("failed to create a window. {e}"),
-                }),
-            },
-        }?;
+    ) -> Result<(gtk4::Window, gstreamer::Element), command::ErrorReason> {
+        let window: gtk4::Window =
+            init_window(self, connector).map_err(|e| make_server_error(e.as_str()))?;
+
+        let (width, height) = get_rectangle(&window).map_err(|e| make_server_error(e.as_str()))?;
+
         let videoconvert = gstreamer::ElementFactory::make("videoconvert")
             .build()
             .unwrap();
         let aspectratiocrop = gstreamer::ElementFactory::make("aspectratiocrop")
-            .property("aspect-ratio", gstreamer::Fraction::new(16, 10))
+            .property("aspect-ratio", gstreamer::Fraction::new(width, height))
             .build()
             .unwrap();
         let sink = gstreamer::ElementFactory::make("gtk4paintablesink")
@@ -109,6 +103,8 @@ impl Wallpaper for gtk4::Application {
             })?;
 
         let picture = Picture::for_paintable(&paintable);
+
+        window.monitor().map(|m| m.geometry().width());
         window.set_child(Some(&picture));
 
         //let bus = factory.bus().ok_or("failed to get a bus")?;
@@ -120,37 +116,7 @@ impl Wallpaper for gtk4::Application {
         })?;
         window.present();
 
-        Ok(factory)
-    }
-
-    fn find_window(&self, connector: &str) -> Option<Window> {
-        let windows: Vec<Window> = self.windows();
-        let found: Vec<Window> = windows
-            .iter()
-            .filter(|w| w.is_visible())
-            .filter_map(|window| {
-                if window.monitor()?.connector()?.to_string() == connector {
-                    Some(window.clone())
-                } else {
-                    None
-                }
-            })
-            .collect();
-        found.get(0).map(|w| w.clone())
-    }
-
-    fn init_window(&self, connector: &str) -> Result<Window, String> {
-        let window = Window::builder().application(self).build();
-        window.init_layer_shell();
-        window.set_layer(gtk4_layer_shell::Layer::Bottom);
-
-        let monitor = detect_gdk_monitor(connector)?;
-        window.set_monitor(Some(&monitor));
-        window.set_anchor(gtk4_layer_shell::Edge::Left, true);
-        window.set_anchor(gtk4_layer_shell::Edge::Right, true);
-        window.set_anchor(gtk4_layer_shell::Edge::Top, true);
-        window.set_anchor(gtk4_layer_shell::Edge::Bottom, true);
-        Ok(window)
+        Ok((window, factory))
     }
 }
 /**
@@ -159,5 +125,3 @@ impl Wallpaper for gtk4::Application {
 fn build_ui(app: &Application) {
     let _ = Window::builder().application(app).build();
 }
-
-fn prepare_window(connector: &Option<String>) {}

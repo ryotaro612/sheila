@@ -1,9 +1,15 @@
 use std::collections::HashMap;
 use std::result;
 
+use gdk4::prelude::MonitorExt;
 use gstreamer::prelude::ElementExt;
 
-use crate::{command, draw::wallpaper};
+use crate::{
+    command::{self, make_server_error},
+    draw::wallpaper,
+};
+
+use super::monitor::detect_gdk_monitor;
 /**
  *
  */
@@ -40,10 +46,11 @@ impl State {
             command::Command::Status { .. } => Ok(serde_json::json!({})),
             command::Command::Display { file, monitor } => {
                 if self.is_running == false {
-                    return Err(command::ErrorReason::ServerError {
-                        reason: "the background service is down".to_string(),
-                    });
+                    return Err(make_server_error("the background service is down"));
                 }
+                let monitor = detect_gdk_monitor(monitor).map_err(|e| {
+                    make_server_error("failed to determine the monitor to display a file")
+                })?;
 
                 let element = wallpaper.display(monitor, file)?;
                 let watcher = element

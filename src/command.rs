@@ -19,3 +19,9 @@ pub(crate) enum ErrorReason {
     InvalidParams { reason: String },
     ServerError { reason: String },
 }
+
+pub(crate) fn make_server_error(msg: &str) -> ErrorReason {
+    ErrorReason::ServerError {
+        reason: msg.to_string(),
+    }
+}
