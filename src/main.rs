@@ -5,7 +5,6 @@ mod command;
 mod draw;
 mod logger;
 mod parser;
-mod response;
 mod server;
 
 fn main() {
