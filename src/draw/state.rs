@@ -47,8 +47,6 @@ impl State {
                         reason: "the background service is down".to_string(),
                     });
                 }
-                log::error!("display command: file: {}, monitor: {:?}", file, monitor);
-                println!("display command: file: {}, monitor: {:?}", file, monitor);
 
                 let connector = match monitor {
                     Some(m) => m.to_string(),
