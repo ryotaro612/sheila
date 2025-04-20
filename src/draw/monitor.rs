@@ -125,26 +125,3 @@ fn detect_display() -> Result<gdk4::Display, String> {
     //  gdk4::Display::open(None).unwrap(); or wayland-1 WAYLAND_DISPLAY env
     gdk4::Display::default().ok_or(String::from("failed to detect a display"))
 }
-// fn temp() {
-//     //let a = gdk4::Display::default();
-//     //let display = gdk4_sys::gdk_display_get_default();
-//     // gdk_monitor_get_geometry();
-//     //gdk4_sys::
-//     let c = gdk4::Display::open(None).unwrap();
-//     println!("{:?}", c);
-//     let display = gdk4::Display::default().unwrap();
-//     let monitors = display.monitors();
-//     let n = monitors.n_items();
-//     println!("num: {n}");
-//     let monitor = monitors
-//         .item(1)
-//         .unwrap()
-//         .downcast::<gdk4::Monitor>()
-//         .unwrap();
-
-//     println!(
-//         "monitor-size: {:?} {:?}",
-//         monitor.connector(),
-//         monitor.geometry()
-//     );
-// }
