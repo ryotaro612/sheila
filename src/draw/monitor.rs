@@ -7,6 +7,9 @@ use gdk4::prelude::MonitorExt;
 use gio::prelude::*;
 use glib::Object;
 
+/**
+ *
+ */
 fn detect_gdk_monitors() -> Result<Vec<gdk4::Monitor>, String> {
     let display = detect_display()?;
     let monitors_list_model = display.monitors();
@@ -16,7 +19,7 @@ fn detect_gdk_monitors() -> Result<Vec<gdk4::Monitor>, String> {
             let object: Object = res.map_err(|e| e.to_string())?;
             let monitor = object
                 .downcast::<gdk4::Monitor>()
-                .map_err(|_| "failed to downcast a glib object to a monitor".to_string())?;
+                .map_err(|_| "failed to downcast n glib Object to an gdk4::Monitor".to_string())?;
             Ok(monitor)
         })
         .filter_map(|f: Result<gdk4::Monitor, String>| f.ok())
@@ -30,6 +33,7 @@ pub(crate) fn detect_gdk_monitor(connector: &str) -> Result<gdk4::Monitor, Strin
         .find(|m| m.connector().unwrap_or_default() == connector)
         .map(|m| m)
         .ok_or(format!("monitor not found: {}", connector))?;
+
     Ok(monitor.clone())
 }
 
@@ -43,79 +47,6 @@ pub(crate) fn detect_primary_monitor() -> Result<String, String> {
     c.get(0)
         .map(|x| x.to_string())
         .ok_or("there aren't any monitors".to_string())
-}
-
-/**
- * Detects monitors and returns a list of them.
- */
-pub(crate) fn detect_monitors() -> Result<Monitors, String> {
-    let display = detect_display()?;
-    let monitors_list_model = display.monitors();
-    let monitors: Vec<Monitor> = monitors_list_model
-        .iter()
-        .map(|res| {
-            let object: Object = res.map_err(|e| e.to_string())?;
-
-            let monitor = object
-                .downcast::<gdk4::Monitor>()
-                .map_err(|_| String::from("failed to downcast a glib object to a monitor"))?;
-
-            let connector: String = monitor
-                .connector()
-                .ok_or(String::from("failed to get a connector"))?
-                .into();
-            let geometry = monitor.geometry();
-
-            let res: Result<Monitor, String> = Ok(Monitor {
-                connector,
-                x: geometry.x(),
-                y: geometry.y(),
-                width: geometry.width(),
-                height: geometry.height(),
-            });
-            res
-        })
-        .filter_map(|f| f.ok())
-        .collect();
-
-    match monitors.len() {
-        0 => {
-            return Err(String::from("no monitors detected"));
-        }
-        _ => {
-            return Ok(Monitors { monitors });
-        }
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct Monitor {
-    connector: String,
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-}
-
-#[derive(Debug)]
-pub(crate) struct Monitors {
-    monitors: Vec<Monitor>,
-}
-
-/**
- *
- */
-impl Monitors {
-    /**
-     * Returns the primary monitor.
-     */
-    pub(crate) fn first(&self) -> Option<String> {
-        if 0 < self.monitors.len() {
-            Some(self.monitors[0].connector.clone())
-        } else {
-            None
-        }
-    }
 }
 
 /**

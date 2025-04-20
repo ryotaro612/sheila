@@ -3,10 +3,7 @@ use std::result;
 
 use gstreamer::prelude::ElementExt;
 
-use crate::{
-    command,
-    draw::{monitor::detect_primary_monitor, wallpaper},
-};
+use crate::{command, draw::wallpaper};
 /**
  *
  */
@@ -48,15 +45,7 @@ impl State {
                     });
                 }
 
-                let connector = match monitor {
-                    Some(m) => m.to_string(),
-                    None => {
-                        detect_primary_monitor().map_err(|e| command::ErrorReason::ServerError {
-                            reason: e.to_string(),
-                        })?
-                    }
-                };
-                let element = wallpaper.display(&connector, file)?;
+                let element = wallpaper.display(monitor, file)?;
                 let watcher = element
                     .bus()
                     .unwrap()
