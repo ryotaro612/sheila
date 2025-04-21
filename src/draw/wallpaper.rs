@@ -23,9 +23,9 @@ pub(crate) trait Wallpaper {
      */
     fn display(
         &self,
-        monitor: &Option<String>,
+        monitor: &gdk4::Monitor,
         file: &str,
-    ) -> Result<(gtk4::Window, gstreamer::Element), command::ErrorReason>;
+    ) -> Result<gstreamer::Element, command::ErrorReason>;
 }
 
 impl Wallpaper for gtk4::Application {
@@ -52,18 +52,16 @@ impl Wallpaper for gtk4::Application {
         self.quit();
     }
 
-    /**
-    * $  gst-launch-1.0 playbin uri=a.mp4 mute=true video-sink="videoconvert  ! aspectratiocrop aspect-ratio=9/9 ! gtk4paintablesink sync=false"
-
-    * https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
-    */
+    // $  gst-launch-1.0 playbin uri=a.mp4 mute=true video-sink="videoconvert  ! aspectratiocrop aspect-ratio=9/9 ! gtk4paintablesink sync=false"
+    // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
+    // TODO close window if failed.
     fn display(
         &self,
-        connector: &Option<String>,
+        monitor: &gdk4::Monitor,
         file: &str,
-    ) -> Result<(gtk4::Window, gstreamer::Element), command::ErrorReason> {
+    ) -> Result<gstreamer::Element, command::ErrorReason> {
         let window: gtk4::Window =
-            init_window(self, connector).map_err(|e| make_server_error(e.as_str()))?;
+            init_window(self, monitor).map_err(|e| make_server_error(e.as_str()))?;
 
         let (width, height) = get_rectangle(&window).map_err(|e| make_server_error(e.as_str()))?;
 
@@ -104,10 +102,8 @@ impl Wallpaper for gtk4::Application {
 
         let picture = Picture::for_paintable(&paintable);
 
-        window.monitor().map(|m| m.geometry().width());
+        //window.monitor().map(|m| m.geometry().width());
         window.set_child(Some(&picture));
-
-        //let bus = factory.bus().ok_or("failed to get a bus")?;
 
         factory.set_state(gstreamer::State::Playing).map_err(|e| {
             command::ErrorReason::ServerError {
@@ -116,7 +112,7 @@ impl Wallpaper for gtk4::Application {
         })?;
         window.present();
 
-        Ok((window, factory))
+        Ok(factory)
     }
 }
 /**

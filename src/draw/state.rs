@@ -3,6 +3,7 @@ use std::result;
 
 use gdk4::prelude::MonitorExt;
 use gstreamer::prelude::ElementExt;
+use serde_json::to_string;
 
 use crate::{
     command::{self, make_server_error},
@@ -48,11 +49,15 @@ impl State {
                 if self.is_running == false {
                     return Err(make_server_error("the background service is down"));
                 }
-                let monitor = detect_gdk_monitor(monitor).map_err(|e| {
+                let gdk_monitor = detect_gdk_monitor(monitor).map_err(|e| {
                     make_server_error("failed to determine the monitor to display a file")
                 })?;
+                let connector_name = gdk_monitor
+                    .connector()
+                    .map(|g| g.to_string())
+                    .ok_or(make_server_error("failed to get connector name"))?;
 
-                let element = wallpaper.display(monitor, file)?;
+                let element = wallpaper.display(&gdk_monitor, file)?;
                 let watcher = element
                     .bus()
                     .unwrap()
@@ -75,7 +80,7 @@ impl State {
                     })
                     .unwrap();
 
-                self.connector_watch.insert(connector, watcher);
+                self.connector_watch.insert(connector_name, watcher);
 
                 Ok(serde_json::json!({}))
             }
