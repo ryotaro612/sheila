@@ -49,9 +49,10 @@ impl State {
                 if self.is_running == false {
                     return Err(make_server_error("the background service is down"));
                 }
-                let gdk_monitor = detect_gdk_monitor(monitor).map_err(|e| {
-                    make_server_error("failed to determine the monitor to display a file")
-                })?;
+
+                log::debug!("monitor {:?}", monitor);
+                let gdk_monitor =
+                    detect_gdk_monitor(monitor).map_err(|e| make_server_error(e.as_str()))?;
                 let connector_name = gdk_monitor
                     .connector()
                     .map(|g| g.to_string())
@@ -62,8 +63,8 @@ impl State {
                     .bus()
                     .unwrap()
                     .add_watch_local(move |bus, msg| {
-                        log::debug!("msg: {:?}", msg);
-                        log::debug!("msg: {:?}", msg.view());
+                        // log::debug!("msg: {:?}", msg);
+                        // log::debug!("msg: {:?}", msg.view());
                         match msg.view() {
                             gstreamer::MessageView::Eos(..) => {
                                 log::debug!("stop");
