@@ -2,9 +2,11 @@ use gstreamer;
 use gstreamer::prelude::{ElementExt, ElementExtManual, GstBinExtManual};
 use gtk4::{glib, Application, Window};
 use gtk4::{prelude::*, Picture};
+use gtk4_layer_shell::LayerShell;
 
 use crate::command::{self, make_server_error};
 
+use super::monitor::detect_gdk_monitor;
 use super::window::{get_rectangle, init_window};
 
 pub(crate) trait Wallpaper {
@@ -25,9 +27,30 @@ pub(crate) trait Wallpaper {
         monitor: &gdk4::Monitor,
         file: &str,
     ) -> Result<gstreamer::Element, command::ErrorReason>;
+
+    fn default_connector(&self) -> Result<String, String>;
+
+    fn close_window_by_connector(&self, connector: &str);
 }
 
 impl Wallpaper for gtk4::Application {
+    fn close_window_by_connector(&self, connector: &str) {
+        self.windows().iter().for_each(|w| {
+            if let Some(m) = w.monitor() {
+                if m.connector().unwrap_or_default() == connector {
+                    w.close();
+                }
+            }
+        });
+    }
+    fn default_connector(&self) -> Result<String, String> {
+        let monitor = detect_gdk_monitor(&None)?;
+        monitor
+            .connector()
+            .map(|g| g.to_string())
+            .ok_or("failed to resolve the connector of the default monitor".to_string())
+    }
+
     fn new_application() -> Result<gtk4::Application, String> {
         let app = Application::builder()
             .application_id("dev.ryotaro.sheila")

@@ -2,14 +2,15 @@ use crate::command::{self, Command};
 mod monitor;
 mod receiver;
 mod state;
+mod stream;
 mod wallpaper;
 mod window;
 use crate::draw::receiver as dr;
+
 use gtk4::glib;
 use std::result;
 use std::sync::{self, mpsc};
 use wallpaper::Wallpaper;
-
 pub(crate) struct Drawer<'a> {
     command_receiver: mpsc::Receiver<command::Command>,
     result_sender: &'a mpsc::Sender<Result<serde_json::Value, command::ErrorReason>>,
