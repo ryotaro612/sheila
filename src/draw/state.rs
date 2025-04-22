@@ -3,14 +3,13 @@ use std::result;
 
 use gdk4::prelude::MonitorExt;
 use gstreamer::prelude::ElementExt;
-use serde_json::to_string;
 
 use crate::{
     command::{self, make_server_error},
     draw::wallpaper,
 };
 
-use super::monitor::detect_gdk_monitor;
+use super::monitor::{connector_name, detect_gdk_monitor};
 /**
  *
  */
@@ -20,7 +19,7 @@ pub(crate) struct State {
 }
 
 /**
- *
+ * TODO
  */
 impl State {
     pub(crate) fn new() -> Self {
@@ -53,10 +52,8 @@ impl State {
 
                 let gdk_monitor =
                     detect_gdk_monitor(monitor).map_err(|e| make_server_error(e.as_str()))?;
-                let connector_name = gdk_monitor
-                    .connector()
-                    .map(|g| g.to_string())
-                    .ok_or(make_server_error("failed to get connector name"))?;
+                let connector_name =
+                    connector_name(&gdk_monitor).map_err(|e| make_server_error(e.as_str()))?;
 
                 let element = wallpaper.display(&gdk_monitor, file)?;
                 let watcher = element

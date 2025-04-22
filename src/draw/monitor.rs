@@ -23,6 +23,13 @@ pub(crate) fn detect_gdk_monitor(connector: &Option<String>) -> Result<gdk4::Mon
     }
 }
 
+pub(crate) fn connector_name(monitor: &gdk4::Monitor) -> Result<String, String> {
+    monitor
+        .connector()
+        .map(|g| g.to_string())
+        .ok_or("failed to resolve the connector name".to_string())
+}
+
 /**
  *
  */

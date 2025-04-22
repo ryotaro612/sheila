@@ -35,6 +35,7 @@ impl Wallpaper for gtk4::Application {
         app.connect_activate(build_ui);
 
         gstreamer::init().map_err(|e| e.to_string())?;
+
         Ok(app)
     }
 
