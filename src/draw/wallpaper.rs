@@ -2,7 +2,6 @@ use gstreamer;
 use gstreamer::prelude::{ElementExt, ElementExtManual, GstBinExtManual};
 use gtk4::{glib, Application, Window};
 use gtk4::{prelude::*, Picture};
-use gtk4_layer_shell::LayerShell;
 
 use crate::command::{self, make_server_error};
 

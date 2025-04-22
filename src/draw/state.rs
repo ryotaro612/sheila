@@ -45,12 +45,12 @@ impl State {
                 Ok(serde_json::Value::Null)
             }
             command::Command::Status { .. } => Ok(serde_json::json!({})),
+            // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
             command::Command::Display { file, monitor } => {
                 if self.is_running == false {
                     return Err(make_server_error("the background service is down"));
                 }
 
-                log::debug!("monitor {:?}", monitor);
                 let gdk_monitor =
                     detect_gdk_monitor(monitor).map_err(|e| make_server_error(e.as_str()))?;
                 let connector_name = gdk_monitor

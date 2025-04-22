@@ -50,15 +50,11 @@ impl DisplayCommandPresenter for JsonRpcRequest {
             .as_str()
             .ok_or("file is not a string")?;
         match params.get("monitor") {
-            Some(m) => {
-                log::debug!("monitor: {}", m);
-                let monitor = m.as_str().ok_or("monitor is not a string")?;
-                Ok(command::Command::Display {
-                    file: file.to_string(),
-                    monitor: Some(monitor.to_string()),
-                })
-            }
-            None => Ok(command::Command::Display {
+            Some(serde_json::Value::String(s)) => Ok(command::Command::Display {
+                file: file.to_string(),
+                monitor: Some(s.to_string()),
+            }),
+            _ => Ok(command::Command::Display {
                 file: file.to_string(),
                 monitor: None,
             }),
@@ -137,6 +133,27 @@ mod tests {
             method: "display".to_string(),
             params: Some(serde_json::json!({
                 "file": "image.png",
+            })),
+            id: "id".to_string(),
+        };
+        let actual = make_command(&r).unwrap();
+        assert_eq!(
+            command::Command::Display {
+                file: "image.png".to_string(),
+                monitor: None,
+            },
+            actual
+        );
+    }
+
+    #[test]
+    fn monitor_can_be_null() {
+        let r = JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "display".to_string(),
+            params: Some(serde_json::json!({
+                "file": "image.png",
+                "monitor": null
             })),
             id: "id".to_string(),
         };
