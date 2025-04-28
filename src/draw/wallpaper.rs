@@ -24,7 +24,7 @@ pub(crate) trait Wallpaper {
      */
     fn display(
         &self,
-        monitor: &gdk4::Monitor,
+        connector: &str,
         file: &str,
     ) -> Result<gstreamer::Element, command::ErrorReason>;
 
@@ -80,11 +80,14 @@ impl Wallpaper for gtk4::Application {
     // TODO close window if failed.
     fn display(
         &self,
-        monitor: &gdk4::Monitor,
+        connector: &str,
         file: &str,
     ) -> Result<gstreamer::Element, command::ErrorReason> {
+        let gdk_monitor = detect_gdk_monitor(&Some(connector.to_string()))
+            .map_err(|e| make_server_error(e.as_str()))?;
+
         let window: gtk4::Window =
-            init_window(self, monitor).map_err(|e| make_server_error(e.as_str()))?;
+            init_window(self, &gdk_monitor).map_err(|e| make_server_error(e.as_str()))?;
 
         let (width, height) = get_rectangle(&window).map_err(|e| make_server_error(e.as_str()))?;
 

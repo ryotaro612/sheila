@@ -1,7 +1,8 @@
-use std::collections::HashMap;
 use std::result;
+use std::{cell::RefCell, collections::HashMap};
 
 use gdk4::prelude::MonitorExt;
+use glib::clone::Upgrade;
 use glib::object::ObjectExt;
 use gstreamer::{prelude::ElementExt, Element};
 
@@ -10,6 +11,7 @@ use crate::{
     draw::wallpaper,
 };
 
+use super::stream::Stream;
 use super::{
     monitor::{connector_name, detect_gdk_monitor},
     stream,
@@ -19,7 +21,7 @@ use super::{
  */
 pub(crate) struct State {
     is_running: bool,
-    connector_watch: HashMap<String, Element>,
+    playing: HashMap<String, Stream>,
 }
 
 /**
@@ -29,7 +31,7 @@ impl State {
     pub(crate) fn new() -> Self {
         State {
             is_running: true,
-            connector_watch: HashMap::new(),
+            playing: HashMap::new(),
         }
     }
 
@@ -59,44 +61,44 @@ impl State {
                         .default_connector()
                         .map_err(|e| make_server_error(&e)),
                 }?;
-                if let Some(element) = self.connector_watch.get(&connector) {
-                    stream::stop(element);
-                    self.connector_watch.remove(&connector);
+                if let Some(s) = self.playing.get(&connector) {
+                    // TODO handle gracefully
+                    s.stop().map_err(|e| make_server_error(&e.to_string()))?;
+                    self.playing.remove(&connector);
+                    wallpaper.close_window_by_connector(&connector);
                 }
-                wallpaper.close_window_by_connector(&connector);
 
-                let gdk_monitor =
-                    detect_gdk_monitor(monitor).map_err(|e| make_server_error(e.as_str()))?;
-                let connector_name =
-                    connector_name(&gdk_monitor).map_err(|e| make_server_error(e.as_str()))?;
+                let element = wallpaper.display(&connector, file)?;
+                let c = element.downgrade();
 
-                let element = wallpaper.display(&gdk_monitor, file)?;
-                let element_weak = element.downgrade();
-                let _ = element
+                let bus_watch_guard = element
                     .bus()
                     .unwrap()
                     .add_watch_local(move |_bus, msg| {
-                        // log::debug!("msg: {:?}", msg);
-                        // log::debug!("msg: {:?}", msg.view());
+                        log::debug!("message: {:?}", msg.view());
+                        log::debug!("c: {:?}", c.upgrade());
                         match msg.view() {
                             gstreamer::MessageView::Eos(..) => {
-                                log::debug!("stop");
-                                if let Some(element) = element_weak.upgrade() {
-                                    element.set_state(gstreamer::State::Null).unwrap();
-                                    element.set_state(gstreamer::State::Playing).unwrap();
+                                log::debug!("begin eos:###");
+                                if let Some(a) = c.upgrade() {
+                                    log::debug!("eos:###");
+                                    a.set_state(gstreamer::State::Null).unwrap();
+                                    a.set_state(gstreamer::State::Playing).unwrap();
                                 }
                             }
-                            // MessageView::Error(err) => {
-                            //     log::error!("error: {}", err.error());
-                            //     factory.set_state(gstreamer::State::Null).unwrap();
-                            // }
                             _ => (),
                         }
                         glib::ControlFlow::Continue
                     })
                     .unwrap();
 
-                self.connector_watch.insert(connector_name, element);
+                self.playing.insert(
+                    connector_name,
+                    Stream {
+                        element,
+                        bus_watch_guard,
+                    },
+                );
 
                 Ok(serde_json::json!({}))
             }

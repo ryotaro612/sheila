@@ -2,8 +2,10 @@ use gdk4::prelude::MonitorExt;
 use gtk4::{Application, Window};
 use gtk4_layer_shell::LayerShell;
 
-// Initializes a GTK window and attaches it to the specified monitor (connector).
-// Returns an error if the monitor cannot be detected or the window cannot be created.
+/**
+Initializes a GTK window and attaches it to the specified monitor (connector).
+Returns an error if the monitor cannot be detected or the window cannot be created.
+*/
 pub(crate) fn init_window(app: &Application, monitor: &gdk4::Monitor) -> Result<Window, String> {
     let window = Window::builder().application(app).build();
     window.init_layer_shell();
