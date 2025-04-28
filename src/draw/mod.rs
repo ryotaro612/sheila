@@ -45,7 +45,6 @@ impl<'a> Drawer<'a> {
                     #[weak]
                     app,
                     move |cmd: Command| {
-                        log::debug!("command: {:?}", cmd);
                         let res = state.execute(&app, &cmd);
                         if let Err(e) = sender.send(res) {
                             log::error!("disconnected: {e}");

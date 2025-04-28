@@ -42,8 +42,6 @@ impl<'a> DefaultHandler<'a> {
         let json_rpc_request: request::JsonRpcRequest = serde_json::from_value(json_value)
             .map_err(|error| response::Response::InvalidRequest { error })?;
 
-        log::debug!("json_rpc_request: {:?}", json_rpc_request);
-
         let command = make_command(&json_rpc_request)?;
         self.command_sender.send(command).map_err(|error| {
             log::error!(
