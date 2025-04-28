@@ -4,29 +4,6 @@ use std::io::Write;
 use std::net;
 use std::result;
 
-#[cfg(test)]
-use mockall::{automock, predicate::*};
-/**
- * A JSON-RPC client.
- */
-#[cfg_attr(test, automock)]
-pub(crate) trait Client {
-    /**
-     * Returns Ok(v) if the request was successful, or Err(e) if there was an error.
-     * v is a JSON-RPC response.
-     */
-    fn send(
-        &self,
-        id: &str,
-        method: &str,
-        params: serde_json::Value,
-    ) -> result::Result<serde_json::Value, String>;
-
-    /**
-     */
-    fn send_method(&self, id: &str, method: &str) -> result::Result<serde_json::Value, String>;
-}
-
 pub(crate) struct SocketClient {
     socket: String,
 }
@@ -58,11 +35,16 @@ impl Client for SocketClient {
 }
 
 impl SocketClient {
+    /* Create a new instance.
+     */
     pub(crate) fn new(socket: &str) -> Self {
         SocketClient {
             socket: socket.to_string(),
         }
     }
+    /**
+     * Write the JSON value to the socket and read the response.
+     */
     fn request(&self, payload: serde_json::Value) -> result::Result<serde_json::Value, String> {
         let mut stream =
             std::os::unix::net::UnixStream::connect(&self.socket).map_err(|e| e.to_string())?;
@@ -89,4 +71,27 @@ impl SocketClient {
         }
         Ok(v)
     }
+}
+
+#[cfg(test)]
+use mockall::{automock, predicate::*};
+/**
+ * A JSON-RPC client.
+ */
+#[cfg_attr(test, automock)]
+pub(crate) trait Client {
+    /**
+     * Returns Ok(v) if the request was successful, or Err(e) if there was an error.
+     * v is a JSON-RPC response.
+     */
+    fn send(
+        &self,
+        id: &str,
+        method: &str,
+        params: serde_json::Value,
+    ) -> result::Result<serde_json::Value, String>;
+
+    /**
+     */
+    fn send_method(&self, id: &str, method: &str) -> result::Result<serde_json::Value, String>;
 }
