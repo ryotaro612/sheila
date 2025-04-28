@@ -1,10 +1,5 @@
+use std::collections::HashMap;
 use std::result;
-use std::{cell::RefCell, collections::HashMap};
-
-use gdk4::prelude::MonitorExt;
-use glib::clone::Upgrade;
-use glib::object::ObjectExt;
-use gstreamer::{prelude::ElementExt, Element};
 
 use crate::{
     command::{self, make_server_error},
@@ -12,10 +7,6 @@ use crate::{
 };
 
 use super::stream::Stream;
-use super::{
-    monitor::{connector_name, detect_gdk_monitor},
-    stream,
-};
 /**
  *
  */
@@ -68,37 +59,9 @@ impl State {
                     wallpaper.close_window_by_connector(&connector);
                 }
 
-                let element = wallpaper.display(&connector, file)?;
-                let c = element.downgrade();
+                let stream = wallpaper.display(&connector, file)?;
 
-                let bus_watch_guard = element
-                    .bus()
-                    .unwrap()
-                    .add_watch_local(move |_bus, msg| {
-                        log::debug!("message: {:?}", msg.view());
-                        log::debug!("c: {:?}", c.upgrade());
-                        match msg.view() {
-                            gstreamer::MessageView::Eos(..) => {
-                                log::debug!("begin eos:###");
-                                if let Some(a) = c.upgrade() {
-                                    log::debug!("eos:###");
-                                    a.set_state(gstreamer::State::Null).unwrap();
-                                    a.set_state(gstreamer::State::Playing).unwrap();
-                                }
-                            }
-                            _ => (),
-                        }
-                        glib::ControlFlow::Continue
-                    })
-                    .unwrap();
-
-                self.playing.insert(
-                    connector_name,
-                    Stream {
-                        element,
-                        bus_watch_guard,
-                    },
-                );
+                self.playing.insert(connector, stream);
 
                 Ok(serde_json::json!({}))
             }

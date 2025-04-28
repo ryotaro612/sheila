@@ -1,3 +1,4 @@
+use gdk4::Paintable;
 use gstreamer::bus;
 use gstreamer::prelude::{ElementExt, ElementExtManual, GstBinExtManual};
 use gtk4::prelude::*;
@@ -5,6 +6,7 @@ use gtk4::prelude::*;
 pub(crate) struct Stream {
     element: gstreamer::Element,
     bus_watch_guard: bus::BusWatchGuard,
+    paintable: Paintable,
 }
 
 impl Stream {
@@ -14,7 +16,11 @@ impl Stream {
         self.element.set_state(gstreamer::State::Null)
     }
 
-    fn new(file: &str, width: i32, height: i32) -> Result<Stream, String> {
+    pub(crate) fn paintable(&self) -> Paintable {
+        self.paintable.clone()
+    }
+
+    pub(crate) fn new(file: &str, width: i32, height: i32) -> Result<Stream, String> {
         let videoconvert = gstreamer::ElementFactory::make("videoconvert")
             .build()
             .unwrap();
@@ -46,6 +52,10 @@ impl Stream {
             .build()
             .map_err(|e| e.to_string())?;
 
+        factory
+            .set_state(gstreamer::State::Playing)
+            .map_err(|e| format!("failed to set state: {e}"))?;
+
         let element_ref = factory.downgrade();
 
         let bus_watch_guard = factory
@@ -72,6 +82,7 @@ impl Stream {
         Ok(Stream {
             element: factory,
             bus_watch_guard,
+            paintable,
         })
     }
 }
