@@ -1,10 +1,14 @@
 use gdk4::Paintable;
-use gstreamer::bus;
 use gstreamer::prelude::{ElementExt, ElementExtManual, GstBinExtManual};
+use gstreamer::{bus, element_error};
 use gtk4::prelude::*;
 /**
 * gst-launch-1.0 -v   filesrc location=~/a.mp4 !   qtdemux name=demux   demux.video_0 ! queue ! vaapidecodebin ! videoconvert !  aspectratiocrop  aspect-ratio=16/9 ! gtk4paintablesink
-
+ gst-launch-1.0 -v \
+  playbin \
+  uri=file:///home/youruser/file.mp4 \
+  video-filter="aspectratiocrop aspect-ratio=16/9" \
+  video-sink=gtk4paintablesink
 */
 pub(crate) struct Stream {
     element: gstreamer::Element,
@@ -24,44 +28,71 @@ impl Stream {
     }
 
     pub(crate) fn new(file: &str, width: i32, height: i32) -> Result<Stream, String> {
-        let videoconvert = gstreamer::ElementFactory::make("videoconvert")
+        let neg: i64 = -1;
+        let sink = gstreamer::ElementFactory::make("gtk4paintablesink")
+            .property("max-lateness", neg)
             .build()
-            .unwrap();
-        let aspectratiocrop = gstreamer::ElementFactory::make("aspectratiocrop")
+            .map_err(|e| e.to_string())?;
+
+        let crop = gstreamer::ElementFactory::make("aspectratiocrop")
             .property("aspect-ratio", gstreamer::Fraction::new(width, height))
             .build()
-            .unwrap();
-        let sink = gstreamer::ElementFactory::make("gtk4paintablesink")
-            .property("sync", false)
-            .build()
             .map_err(|e| e.to_string())?;
 
-        let bin = gstreamer::Bin::new();
-        bin.add_many(&[&videoconvert, &aspectratiocrop, &sink])
-            .unwrap();
-        videoconvert.link(&aspectratiocrop).unwrap();
-        aspectratiocrop.link(&sink).unwrap();
-        //gstreamer::Element::link_many(&[&videoconvert, &aspectratiocrop, &sink]).unwrap();
-        bin.add_pad(
-            &gstreamer::GhostPad::with_target(&videoconvert.static_pad("sink").unwrap()).unwrap(),
-        )
-        .unwrap();
+        // video-filter に設定（Bin に入れる必要あり）
+
+        let filter_bin = gstreamer::Bin::new();
+        filter_bin.add_many([&crop]).unwrap();
+        let pad = crop.static_pad("sink").unwrap();
+        let ghost_pad = gstreamer::GhostPad::with_target(&pad).unwrap();
+        filter_bin.add_pad(&ghost_pad).unwrap();
+
+        let playbin = gstreamer::ElementFactory::make("playbin")
+            .property("uri", format!("file://{}", file))
+            //.property("video-filter", filter_bin)
+            .property("video-sink", &sink)
+            .build()
+            .map_err(|e| e.to_string())?;
 
         let paintable = sink.property::<gdk4::Paintable>("paintable");
-        let factory = gstreamer::ElementFactory::make("playbin")
-            .property("uri", format!("file://{}", file))
-            .property("mute", true)
-            .property("video-sink", bin)
-            .build()
-            .map_err(|e| e.to_string())?;
+        // let videoconvert = gstreamer::ElementFactory::make("videoconvert")
+        //     .build()
+        //     .unwrap();
+        // let aspectratiocrop = gstreamer::ElementFactory::make("aspectratiocrop")
+        //     .property("aspect-ratio", gstreamer::Fraction::new(width, height))
+        //     .build()
+        //     .unwrap();
+        // let sink = gstreamer::ElementFactory::make("gtk4paintablesink")
+        //     .property("sync", false)
+        //     .build()
+        //     .map_err(|e| e.to_string())?;
 
-        factory
+        // let bin = gstreamer::Bin::new();
+        // bin.add_many(&[&videoconvert, &aspectratiocrop, &sink])
+        //     .unwrap();
+        // videoconvert.link(&aspectratiocrop).unwrap();
+        // aspectratiocrop.link(&sink).unwrap();
+        // //gstreamer::Element::link_many(&[&videoconvert, &aspectratiocrop, &sink]).unwrap();
+        // bin.add_pad(
+        //     &gstreamer::GhostPad::with_target(&videoconvert.static_pad("sink").unwrap()).unwrap(),
+        // )
+        // .unwrap();
+
+        // let paintable = sink.property::<gdk4::Paintable>("paintable");
+        // let factory = gstreamer::ElementFactory::make("playbin")
+        //     .property("uri", format!("file://{}", file))
+        //     .property("mute", true)
+        //     .property("video-sink", bin)
+        //     .build()
+        //     .map_err(|e| e.to_string())?;
+
+        playbin
             .set_state(gstreamer::State::Playing)
             .map_err(|e| format!("failed to set state: {e}"))?;
 
-        let element_ref = factory.downgrade();
+        let element_ref = playbin.downgrade();
 
-        let bus_watch_guard = factory
+        let bus_watch_guard = playbin
             .bus()
             .unwrap()
             .add_watch_local(move |_bus, msg| {
@@ -83,7 +114,7 @@ impl Stream {
             .unwrap();
 
         Ok(Stream {
-            element: factory,
+            element: playbin,
             bus_watch_guard,
             paintable,
         })
