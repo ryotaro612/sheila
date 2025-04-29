@@ -1,7 +1,10 @@
 use env_logger::Builder;
 use log::LevelFilter;
+
 /**
- *  Initialize the log system
+  Sets the logging level.
+  If verbose is true, the log module prints messages with level Debug or higher.
+  Otherwise, the threshold is Info.
 */
 pub(crate) fn init_log(verbose: bool) {
     let mut builder = Builder::new();
