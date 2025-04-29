@@ -10,7 +10,7 @@ use serde_json::json;
 pub(crate) fn display(
     cli: &impl client::Client,
     id: &str,
-    args: parser::DisplayArgs,
+    args: parser::PlayArgs,
 ) -> Result<String, String> {
     let p = Path::new(&args.file)
         .canonicalize()
@@ -52,7 +52,7 @@ mod display_tests {
     fn sends_file_path() {
         // arrange
         let id = "abc";
-        let args = parser::DisplayArgs {
+        let args = parser::PlayArgs {
             file: "Cargo.toml".to_string(),
             monitor: None,
         };
@@ -84,7 +84,7 @@ mod display_tests {
     fn sends_monitor() {
         // arrange
         let id = "abc";
-        let args = parser::DisplayArgs {
+        let args = parser::PlayArgs {
             file: "Cargo.toml".to_string(),
             monitor: Some("eDP-1".to_string()),
         };
@@ -115,7 +115,7 @@ mod display_tests {
     #[test]
     fn returns_error_on_server_error() {
         let id = "abc";
-        let args = parser::DisplayArgs {
+        let args = parser::PlayArgs {
             file: "/image.png".to_string(),
             monitor: None,
         };

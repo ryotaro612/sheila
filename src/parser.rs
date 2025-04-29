@@ -1,10 +1,13 @@
 /**
- * This module defines command-line commands and their arguments.
- */
+ This module defines command-line commands and their arguments.
+*/
 use std::ffi::OsString;
 
 use clap::{Args, Parser, Subcommand};
 
+/**
+ * Parses the command line arguments.
+ */
 #[derive(Debug, Parser)]
 #[command(name = "sheila")]
 pub(crate) struct Cli {
@@ -19,11 +22,20 @@ pub(crate) struct Cli {
     pub(crate) verbose: bool,
 }
 
+impl Cli {
+    /**
+     * Parses command line arguments.
+     */
+    pub(crate) fn parse(args: Vec<String>) -> Result<Cli, String> {
+        Cli::try_parse_from(args).map_err(|e| e.to_string())
+    }
+}
+
 #[derive(Debug, Subcommand)]
 pub(crate) enum Commands {
-    #[command(about = "Run the server")]
+    #[command(about = "Runs the server")]
     Server,
-    #[command(about = "Run the client")]
+    #[command(about = "Runs the client")]
     Client(ClientArgs),
 }
 
@@ -35,30 +47,33 @@ pub(crate) struct ClientArgs {
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum ClientSubCommands {
-    #[command(about = "Display")]
-    Display(DisplayArgs),
+    #[command(about = "Plays an MP4 file.")]
+    Play(PlayArgs),
     Status,
     Stop,
 }
 
+/**
+
+*/
 #[derive(Debug, Args)]
-pub(crate) struct DisplayArgs {
+pub(crate) struct PlayArgs {
+    /**
+     A path to an MP4 file.
+    */
     #[arg()]
     pub(crate) file: String,
 
+    /**
+    The name of a monitor to play a movie.
+    */
     #[arg(long)]
     pub(crate) monitor: Option<String>,
 }
 
 /**
- * Parses the command line arguments.
- */
-pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::error::Error> {
-    Cli::try_parse_from(args)
-}
-/**
- * Defines the default socket file path.
- */
+Defines the default path of the socket file.
+*/
 fn get_default_log_path() -> OsString {
     let mut p = std::env::temp_dir();
     p.push("sheila.socket");
@@ -77,7 +92,7 @@ mod tests {
             .collect();
 
         // actual
-        let actual = parse(args).unwrap();
+        let actual = Cli::parse(args).unwrap();
 
         // assert
         let mut expected = std::env::temp_dir();
@@ -95,7 +110,7 @@ mod tests {
             .collect();
 
         // actual
-        let actual = parse(args).unwrap();
+        let actual = Cli::parse(args).unwrap();
         // assert
         assert!(actual.verbose);
     }
@@ -109,7 +124,7 @@ mod tests {
             .collect();
 
         // actual
-        let actual = parse(args).unwrap();
+        let actual = Cli::parse(args).unwrap();
         // assert
         assert!(actual.verbose);
     }
@@ -122,11 +137,11 @@ mod tests {
             .collect();
 
         // actual
-        let actual = parse(args).unwrap();
+        let actual = Cli::parse(args).unwrap();
 
         match actual.command {
             Commands::Client(client_args) => match client_args.command {
-                ClientSubCommands::Display(args) => {
+                ClientSubCommands::Play(args) => {
                     assert_eq!(None, args.monitor);
                     assert_eq!("image.png", args.file);
                 }
@@ -154,7 +169,7 @@ mod tests {
 
         match actual.command {
             Commands::Client(client_args) => match client_args.command {
-                ClientSubCommands::Display(args) => {
+                ClientSubCommands::Play(args) => {
                     assert_eq!(Some(String::from("eDP-1")), args.monitor);
                 }
                 _ => panic!("unexpected subcommand"),

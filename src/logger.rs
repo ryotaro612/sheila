@@ -3,6 +3,7 @@ use log::LevelFilter;
 
 /**
   Sets the logging level.
+
   If verbose is true, the log module prints messages with level Debug or higher.
   Otherwise, the threshold is Info.
 */

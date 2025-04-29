@@ -13,7 +13,7 @@ pub(crate) fn run(
     let cli = crate::client::client::SocketClient::new(&socket);
     let id = generate_id();
     let res = match args {
-        ClientSubCommands::Display(a) => display::display(&cli, &id, a),
+        ClientSubCommands::Play(a) => display::display(&cli, &id, a),
         ClientSubCommands::Stop => stop::stop(&cli, id.as_str()),
         ClientSubCommands::Status => status::status(&cli, id.as_str()),
     };
@@ -28,8 +28,8 @@ pub(crate) fn run(
     }
 }
 /**
- *
- */
+TODO move
+*/
 pub(crate) fn generate_id() -> String {
     Uuid::new_v4().to_string()
 }
