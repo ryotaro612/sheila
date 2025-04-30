@@ -68,7 +68,7 @@ mod tests {
     }
 
     #[test]
-    fn play() {
+    fn play_monitor_is_optional() {
         let canonical = fs::canonicalize("Cargo.toml")
             .unwrap()
             .to_str()
@@ -89,6 +89,27 @@ mod tests {
     }
 
     #[test]
+    fn play_accepts_monitor() {
+        let canonical = fs::canonicalize("Cargo.toml")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        let res = helper(
+            parser::ClientSubCommands::Play(PlayArgs {
+                file: "Cargo.toml".to_string(),
+                monitor: Some("eDP-1".to_string()),
+            }),
+            command::Command::Play {
+                file: canonical,
+                monitor: Some("eDP-1".to_string()),
+            },
+            serde_json::json!(true),
+        );
+        res.unwrap();
+    }
+
+    #[test]
     fn stop_with_monitor() {
         let res = helper(
             parser::ClientSubCommands::Stop(StopArgs {
@@ -101,6 +122,7 @@ mod tests {
         );
         res.unwrap();
     }
+
     ///
     fn helper(
         arg_cmd: parser::ClientSubCommands,

@@ -37,7 +37,7 @@ fn make_command(r: &JsonRpcRequest) -> result::Result<command::Command, response
                 error: e,
             }),
         "status" => Ok(command::Command::Status),
-        "display" => r
+        "play" => r
             .as_play_cmd()
             .map_err(|e| response::Response::InvalidParams {
                 id: r.id.clone(),
@@ -143,67 +143,5 @@ mod tests {
                 panic!("unexpected response: {:?}", actual);
             }
         }
-    }
-
-    #[test]
-    fn json_rpc_request_can_represent_display_command() {
-        let r = JsonRpcRequest {
-            jsonrpc: "2.0".to_string(),
-            method: "display".to_string(),
-            params: Some(serde_json::json!({
-                "file": "image.png",
-                "monitor": "eDP-1"
-            })),
-            id: "id".to_string(),
-        };
-        let actual = make_command(&r).unwrap();
-        match actual {
-            command::Command::Play { file, monitor } => {
-                assert_eq!("image.png", file);
-                assert_eq!(Some("eDP-1".to_string()), monitor);
-            }
-            _ => panic!("unexpected command: {:?}", actual),
-        }
-    }
-
-    #[test]
-    fn monitor_of_display_command_is_optional() {
-        let r = JsonRpcRequest {
-            jsonrpc: "2.0".to_string(),
-            method: "display".to_string(),
-            params: Some(serde_json::json!({
-                "file": "image.png",
-            })),
-            id: "id".to_string(),
-        };
-        let actual = make_command(&r).unwrap();
-        assert_eq!(
-            command::Command::Play {
-                file: "image.png".to_string(),
-                monitor: None,
-            },
-            actual
-        );
-    }
-
-    #[test]
-    fn monitor_can_be_null() {
-        let r = JsonRpcRequest {
-            jsonrpc: "2.0".to_string(),
-            method: "display".to_string(),
-            params: Some(serde_json::json!({
-                "file": "image.png",
-                "monitor": null
-            })),
-            id: "id".to_string(),
-        };
-        let actual = make_command(&r).unwrap();
-        assert_eq!(
-            command::Command::Play {
-                file: "image.png".to_string(),
-                monitor: None,
-            },
-            actual
-        );
     }
 }

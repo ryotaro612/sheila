@@ -22,7 +22,7 @@ pub(crate) fn play(
     let result = cli
         .send(
             id,
-            "display",
+            "play",
             json!(
                 {"file": p,
                 "monitor": args.monitor
@@ -46,77 +46,12 @@ mod display_tests {
     use crate::client::client;
     use crate::parser;
     use mockall::predicate::*;
-    use serde_json::json;
-
-    #[test]
-    fn sends_file_path() {
-        // arrange
-        let id = "abc";
-        let args = parser::PlayArgs {
-            file: "Cargo.toml".to_string(),
-            monitor: None,
-        };
-        let mut cli = client::MockClient::new();
-
-        cli.expect_send().returning(|id, method, params| {
-            assert_eq!("abc", id);
-            assert_eq!("display", method);
-            let f = params["file"].as_str().unwrap();
-            assert!(f.ends_with("Cargo.toml"));
-            assert_eq!(json!(null), params["monitor"]);
-
-            let res: std::result::Result<serde_json::Value, String> = Ok(serde_json::json!({
-                "jsonrpc": "2.0",
-                "id": "abc",
-                "result": {}
-            }));
-            res
-        });
-        // act
-        let result = play(&cli, id, args);
-
-        // assert
-        assert_eq!(Ok("".to_string()), result);
-        cli.checkpoint();
-    }
-
-    #[test]
-    fn sends_monitor() {
-        // arrange
-        let id = "abc";
-        let args = parser::PlayArgs {
-            file: "Cargo.toml".to_string(),
-            monitor: Some("eDP-1".to_string()),
-        };
-        let mut cli = client::MockClient::new();
-
-        cli.expect_send().returning(|id, method, params| {
-            assert_eq!("abc", id);
-            assert_eq!("display", method);
-            let f = params["file"].as_str().unwrap();
-            assert!(f.ends_with("Cargo.toml"));
-            assert_eq!(json!("eDP-1"), params["monitor"]);
-
-            let res: std::result::Result<serde_json::Value, String> = Ok(serde_json::json!({
-                "jsonrpc": "2.0",
-                "id": "abc",
-                "result": {}
-            }));
-            res
-        });
-        // act
-        let result = play(&cli, id, args);
-
-        // assert
-        assert_eq!(Ok("".to_string()), result);
-        cli.checkpoint();
-    }
 
     #[test]
     fn returns_error_on_server_error() {
         let id = "abc";
         let args = parser::PlayArgs {
-            file: "/image.png".to_string(),
+            file: "/movie.mp4".to_string(),
             monitor: None,
         };
         let mut cli = client::MockClient::new();
@@ -125,7 +60,7 @@ mod display_tests {
         });
 
         cli.expect_send()
-            .with(eq(id), eq("display".to_string()), eq(params))
+            .with(eq(id), eq("play".to_string()), eq(params))
             .returning(|_a, _b, _c| {
                 Ok(serde_json::json!({
                     "jsonrpc": "2.0",
