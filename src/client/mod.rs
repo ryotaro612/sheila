@@ -1,6 +1,7 @@
 use uuid::Uuid;
 pub(crate) mod client;
 mod play;
+mod shutdown;
 pub(crate) mod status;
 pub(crate) mod stop;
 
@@ -16,7 +17,7 @@ pub(crate) fn run(
         parser::ClientSubCommands::Play(a) => play::play(&cli, &id, a),
         parser::ClientSubCommands::Stop(args) => stop::stop(&cli, id.as_str(), &args),
         parser::ClientSubCommands::Status => status::status(&cli, id.as_str()),
-        parser::ClientSubCommands::Shutdown => unimplemented!("implement shutdown"),
+        parser::ClientSubCommands::Shutdown => shutdown::shutdown(&cli, id.as_str()),
     };
     match res {
         Ok(s) => {
@@ -46,6 +47,16 @@ mod tests {
     use std::panic::resume_unwind;
     use std::{env, fs, panic, path, thread};
     use uuid::Uuid;
+
+    #[test]
+    fn shutdown() {
+        let res = helper(
+            parser::ClientSubCommands::Shutdown,
+            command::Command::Shutdown,
+            serde_json::json!(true),
+        );
+        res.unwrap();
+    }
 
     #[test]
     fn status() {

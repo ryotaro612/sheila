@@ -40,6 +40,12 @@ impl State {
                 self.is_running = false;
                 Ok(serde_json::Value::Null)
             }
+            command::Command::Shutdown { .. } => {
+                // TODO
+                wallpaper.stop();
+                self.is_running = false;
+                Ok(serde_json::Value::Null)
+            }
             command::Command::Status { .. } => Ok(serde_json::json!({})),
             // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
             command::Command::Play { file, monitor } => {

@@ -19,7 +19,7 @@ fn main() {
         parser::Commands::Client(client_args) => client::run(cli.socket, client_args.command),
     }
     .unwrap_or_else(|e| {
-        log::error!("error: {e}");
+        log::error!("{}", e);
         process::exit(1);
     });
 }

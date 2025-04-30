@@ -1,6 +1,4 @@
-/**
- This module defines command-line commands and their arguments.
-*/
+/// This module defines command-line commands and their arguments.
 use std::ffi::OsString;
 
 use clap::{Args, Parser, Subcommand};

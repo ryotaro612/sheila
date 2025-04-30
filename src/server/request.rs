@@ -43,6 +43,7 @@ fn make_command(r: &JsonRpcRequest) -> result::Result<command::Command, response
                 id: r.id.clone(),
                 error: e,
             }),
+        "shutdown" => Ok(command::Command::Shutdown),
 
         _ => Err(response::Response::MethodNotFound {
             id: r.id.clone(),
@@ -104,7 +105,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn json_rpc_request_can_omit_parans() {
+    fn json_rpc_request_can_omit_params() {
         let result = serde_json::from_str::<JsonRpcRequest>(
             r#"{"jsonrpc":"2.0","method":"status","id":"id"}"#,
         );
