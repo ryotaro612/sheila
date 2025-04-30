@@ -6,8 +6,8 @@ use std::ffi::OsString;
 use clap::{Args, Parser, Subcommand};
 
 /**
- * Parses the command line arguments.
- */
+ Parses the command line arguments.
+*/
 #[derive(Debug, Parser)]
 #[command(name = "sheila")]
 pub(crate) struct Cli {
@@ -15,9 +15,15 @@ pub(crate) struct Cli {
     pub(crate) command: Commands,
 
     // https://stackoverflow.com/questions/76341332/clap-default-value-for-pathbuf
+    /*
+    Default path for the socket file.
+     */
     #[arg(short, long, default_value = get_default_log_path())]
     pub(crate) socket: String,
     // https://poyo.hatenablog.jp/entry/2022/10/10/170000
+    /*
+    Enables verbose output.
+     */
     #[arg(short, long)]
     pub(crate) verbose: bool,
 }
@@ -79,7 +85,7 @@ pub(crate) struct StopArgs {
 }
 
 /**
-Defines the default path of the socket file.
+Returns the default path of the socket file.
 */
 fn get_default_log_path() -> OsString {
     let mut p = std::env::temp_dir();
