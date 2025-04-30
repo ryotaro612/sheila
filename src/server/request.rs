@@ -1,13 +1,20 @@
-/**
- */
+///
 use crate::command;
 use crate::server::response;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::result;
-/*
 
-*/
+/// Parses a JSON-RPC request string into a command and extracts the request id.
+///
+/// # Arguments
+///
+/// * `request` - The JSON-RPC request as a string.
+///
+/// # Returns
+///
+/// * `Ok((id, command))` if parsing and conversion succeed, where `id` is the request id and `command` is the parsed command.
+/// * `Err(response::Response)` if there is a parsing or validation error.
 pub(crate) fn parse_request(
     request: &str,
 ) -> Result<(String, command::Command), response::Response> {
@@ -20,14 +27,18 @@ pub(crate) fn parse_request(
     Ok((json_rpc_request.id, command))
 }
 
-/**
- */
+///
 fn make_command(r: &JsonRpcRequest) -> result::Result<command::Command, response::Response> {
     match r.method.as_str() {
-        "stop" => Ok(command::Command::Stop { monitor: None }),
+        "stop" => r
+            .as_stop_cmd()
+            .map_err(|e| response::Response::InvalidParams {
+                id: r.id.clone(),
+                error: e,
+            }),
         "status" => Ok(command::Command::Status),
         "display" => r
-            .as_display_cmd()
+            .as_play_cmd()
             .map_err(|e| response::Response::InvalidParams {
                 id: r.id.clone(),
                 error: e,
@@ -48,12 +59,27 @@ pub(crate) struct JsonRpcRequest {
     pub(crate) id: String,
 }
 
-trait DisplayCommandPresenter {
-    fn as_display_cmd(&self) -> Result<command::Command, String>;
+trait StopCommandDecoder {
+    fn as_stop_cmd(&self) -> Result<command::Command, String>;
+}
+impl StopCommandDecoder for JsonRpcRequest {
+    fn as_stop_cmd(&self) -> Result<command::Command, String> {
+        let vals = self.params.as_ref().ok_or("err")?;
+        let monitor = match vals["monitor"] {
+            serde_json::Value::Null => Ok(None),
+            serde_json::Value::String(ref s) => Ok(Some(s.clone())),
+            _ => Err("monitor is not a string".to_string()),
+        }?;
+        Ok(command::Command::Stop { monitor })
+    }
 }
 
-impl DisplayCommandPresenter for JsonRpcRequest {
-    fn as_display_cmd(&self) -> Result<command::Command, String> {
+trait PlayCommandDecoder {
+    fn as_play_cmd(&self) -> Result<command::Command, String>;
+}
+
+impl PlayCommandDecoder for JsonRpcRequest {
+    fn as_play_cmd(&self) -> Result<command::Command, String> {
         let params = self.params.as_ref().ok_or("params is required")?;
         let file = params
             .get("file")
@@ -87,14 +113,17 @@ mod tests {
 
     #[test]
     fn test_method_stop_is_stop_command() {
-        let r = JsonRpcRequest {
-            jsonrpc: "2.0".to_string(),
-            method: "stop".to_string(),
-            params: None,
-            id: "id".to_string(),
-        };
-        let actual = make_command(&r).unwrap();
-        assert_eq!(command::Command::Stop { monitor: None }, actual);
+        let request = serde_json::json!({
+            "jsonrpc": "2.0".to_string(),
+            "method": "stop".to_string(),
+            "params": {
+                "monitor": Option::<String>::None,
+            },
+            "id": "id".to_string(),
+        });
+        let (id, command) = parse_request(request.to_string().as_str()).unwrap();
+        assert_eq!("id", id);
+        assert_eq!(command::Command::Stop { monitor: None }, command);
     }
 
     #[test]

@@ -14,11 +14,7 @@ use crate::draw;
 use std::sync::mpsc;
 use std::thread;
 
-// sync=false is required playbin
-
-/**
- *  Initializes the log system.
-*/
+///  Initializes the log system.
 pub(crate) fn run(socket: String) -> result::Result<(), String> {
     thread::scope(move |s| {
         let (command_sender, command_receiver) = mpsc::channel::<command::Command>();
@@ -43,7 +39,8 @@ pub(crate) fn run(socket: String) -> result::Result<(), String> {
                 sleep(Duration::from_secs(5));
                 if let Err(e) = status::status(&client, &c::generate_id()) {
                     log::debug!("status error: {e}");
-                    stop::stop(&client, &c::generate_id()).unwrap();
+                    // TODO shutdown
+                    //stop::stop(&client, &c::generate_id()).unwrap();
                     break;
                 }
             }

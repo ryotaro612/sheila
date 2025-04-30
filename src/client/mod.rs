@@ -14,7 +14,7 @@ pub(crate) fn run(
     let id = generate_id();
     let res = match args {
         parser::ClientSubCommands::Play(a) => display::display(&cli, &id, a),
-        parser::ClientSubCommands::Stop(args) => stop::stop(&cli, id.as_str()),
+        parser::ClientSubCommands::Stop(args) => stop::stop(&cli, id.as_str(), &args),
         parser::ClientSubCommands::Status => status::status(&cli, id.as_str()),
         parser::ClientSubCommands::Shutdown => unimplemented!("implement shutdown"),
     };
@@ -36,7 +36,7 @@ pub(crate) fn generate_id() -> String {
 }
 
 #[cfg(test)]
-mod run_tests {
+mod tests {
     use super::run;
     use crate::parser::StopArgs;
     use crate::server::request;
@@ -67,6 +67,20 @@ mod run_tests {
         res.unwrap();
     }
 
+    #[test]
+    fn stop_with_monitor() {
+        let res = helper(
+            parser::ClientSubCommands::Stop(StopArgs {
+                monitor: Some("eDP-1".to_string()),
+            }),
+            command::Command::Stop {
+                monitor: Some("eDP-1".to_string()),
+            },
+            serde_json::json!(true),
+        );
+        res.unwrap();
+    }
+
     fn helper(
         arg_cmd: parser::ClientSubCommands,
         expected: command::Command,
@@ -85,13 +99,12 @@ mod run_tests {
                 let client = s.spawn(move || run(socket_client.clone(), arg_cmd));
 
                 let server = s.spawn(move || {
-                    let (mut stream, _) = listener.accept().unwrap(); // ← 接続待ちでブロックする
+                    let (mut stream, _) = listener.accept().unwrap();
                     let mut buf = String::new();
                     stream.read_to_string(&mut buf).unwrap();
                     stream.shutdown(std::net::Shutdown::Read).unwrap();
                     let (id, cmd) = request::parse_request(&buf).unwrap();
                     assert_eq!(expected, cmd);
-
                     let response = serde_json::json!({
                         "jsonrpc": "2.0",
                         "id": id,
