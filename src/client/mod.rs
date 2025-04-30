@@ -1,6 +1,6 @@
 use uuid::Uuid;
 pub(crate) mod client;
-mod display;
+mod play;
 pub(crate) mod status;
 pub(crate) mod stop;
 
@@ -13,7 +13,7 @@ pub(crate) fn run(
     let cli: client::SocketClient = crate::client::client::SocketClient::new(&socket);
     let id = generate_id();
     let res = match args {
-        parser::ClientSubCommands::Play(a) => display::display(&cli, &id, a),
+        parser::ClientSubCommands::Play(a) => play::play(&cli, &id, a),
         parser::ClientSubCommands::Stop(args) => stop::stop(&cli, id.as_str(), &args),
         parser::ClientSubCommands::Status => status::status(&cli, id.as_str()),
         parser::ClientSubCommands::Shutdown => unimplemented!("implement shutdown"),
@@ -38,7 +38,7 @@ pub(crate) fn generate_id() -> String {
 #[cfg(test)]
 mod tests {
     use super::run;
-    use crate::parser::StopArgs;
+    use crate::parser::{PlayArgs, StopArgs};
     use crate::server::request;
     use crate::{command, parser};
     use std::io::{Read, Write};
@@ -68,6 +68,27 @@ mod tests {
     }
 
     #[test]
+    fn play() {
+        let canonical = fs::canonicalize("Cargo.toml")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        let res = helper(
+            parser::ClientSubCommands::Play(PlayArgs {
+                file: "Cargo.toml".to_string(),
+                monitor: None,
+            }),
+            command::Command::Play {
+                file: canonical,
+                monitor: None,
+            },
+            serde_json::json!(true),
+        );
+        res.unwrap();
+    }
+
+    #[test]
     fn stop_with_monitor() {
         let res = helper(
             parser::ClientSubCommands::Stop(StopArgs {
@@ -80,7 +101,7 @@ mod tests {
         );
         res.unwrap();
     }
-
+    ///
     fn helper(
         arg_cmd: parser::ClientSubCommands,
         expected: command::Command,

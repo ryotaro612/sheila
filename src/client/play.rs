@@ -7,7 +7,7 @@ use serde_json::json;
 /**
  * Returns Ok("") if the client have received a success result.
  */
-pub(crate) fn display(
+pub(crate) fn play(
     cli: &impl client::Client,
     id: &str,
     args: parser::PlayArgs,
@@ -42,7 +42,7 @@ pub(crate) fn display(
 
 #[cfg(test)]
 mod display_tests {
-    use super::display;
+    use super::play;
     use crate::client::client;
     use crate::parser;
     use mockall::predicate::*;
@@ -73,7 +73,7 @@ mod display_tests {
             res
         });
         // act
-        let result = display(&cli, id, args);
+        let result = play(&cli, id, args);
 
         // assert
         assert_eq!(Ok("".to_string()), result);
@@ -105,7 +105,7 @@ mod display_tests {
             res
         });
         // act
-        let result = display(&cli, id, args);
+        let result = play(&cli, id, args);
 
         // assert
         assert_eq!(Ok("".to_string()), result);
@@ -137,7 +137,7 @@ mod display_tests {
                 }))
             });
 
-        let result = display(&cli, id, args);
+        let result = play(&cli, id, args);
         assert!(result.is_err());
         cli.checkpoint();
     }

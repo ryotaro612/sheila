@@ -4,9 +4,7 @@ use std::io::Write;
 use std::net;
 use std::result;
 
-/**
- * A JSON-RPC client.
- */
+/// A client of JSON-RPC 2.0.
 #[cfg_attr(test, automock)]
 pub(crate) trait Client {
     /// Sends a JSON-RPC request with the given id, method, and parameters.
