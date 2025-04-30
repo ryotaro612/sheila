@@ -18,14 +18,14 @@ impl<H: handler::Handler> Drop for Server<H> {
 }
 
 impl<H: handler::Handler> Server<H> {
-    /** */
+    /* */
     pub(crate) fn new(socket: &str, handler: H) -> Self {
         return Server {
             socket: socket.to_string(),
             handler,
         };
     }
-    /** */
+    /* */
     pub(crate) fn start(&self) -> result::Result<(), io::Error> {
         let listener = self.bind()?;
         for result_stream in listener.incoming() {
@@ -59,7 +59,6 @@ impl<H: handler::Handler> Server<H> {
             });
     }
     /**
-     *
      */
     fn bind(&self) -> result::Result<net::UnixListener, io::Error> {
         let skt = &self.socket;
