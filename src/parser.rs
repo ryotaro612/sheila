@@ -189,20 +189,19 @@ mod tests {
     }
 
     #[test]
-    fn client_provides_stop_command() {
+    fn client_stop_has_monitor_option() {
         // arrange
-        let args = arrange(vec!["sheila", "client", "stop"]);
+        let args = arrange(vec!["sheila", "client", "stop", "--monitor", "eDP-1"]);
         // actual
-        let actual = parse(args);
-        // assert
-        match actual.unwrap().command {
-            Commands::Client(client_args) => match client_args.command {
-                ClientSubCommands::Stop(args) => {
-                    assert_eq!(None, args.monitor);
-                }
-                _ => panic!("unexpected subcommand"),
-            },
-            _ => panic!("unexpected command"),
+        let actual = parse(args).unwrap().command;
+
+        if let Commands::Client(ClientArgs {
+            command: ClientSubCommands::Stop(StopArgs { monitor }),
+        }) = actual
+        {
+            assert_eq!(Some(String::from("eDP-1")), monitor);
+        } else {
+            panic!("invalid: {:?}", actual);
         }
     }
 
@@ -220,15 +219,6 @@ mod tests {
         } else {
             panic!("unexpected command: {:?}", actual);
         }
-        // match actual.unwrap().command {
-        //     Commands::Client(client_args) => match client_args.command {
-        //         ClientSubCommands::Stop(args) => {
-        //             assert_eq!(None, args.monitor);
-        //         }
-        //         _ => panic!("unexpected subcommand"),
-        //     },
-        //     _ => panic!("unexpected command"),
-        // }
     }
 
     #[test]

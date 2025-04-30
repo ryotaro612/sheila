@@ -95,7 +95,6 @@ pub(crate) struct DefaultHandler<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::thread;
 
     use super::*;
     #[test]
