@@ -47,53 +47,107 @@ mod run_tests {
 
     use crate::server::request;
 
+    fn helper(
+        arg_cmd: parser::ClientSubCommands,
+        expected: command::Command,
+        result: serde_json::Value,
+    ) {
+        let d = env::temp_dir();
+        let socket = path::Path::new(&d)
+            .join(Uuid::new_v4().to_string())
+            .to_str()
+            .unwrap()
+            .to_string();
+        let result = panic::catch_unwind(|| {
+            thread::scope(|s| {
+                let socket_client = socket.clone();
+                let listener = net::UnixListener::bind(&socket).unwrap();
+                let client = s.spawn(move || {
+                    run(socket_client.clone(), arg_cmd).unwrap();
+                });
+
+                let server = s.spawn(move || {
+                    let (mut stream, _) = listener.accept().unwrap(); // ← 接続待ちでブロックする
+                    let mut buf = String::new();
+                    stream.read_to_string(&mut buf).unwrap();
+                    stream.shutdown(std::net::Shutdown::Read).unwrap();
+                    let (id, cmd) = request::parse_request(&buf).unwrap();
+                    assert_eq!(expected, cmd);
+
+                    let response = serde_json::json!({
+                        "jsonrpc": "2.0",
+                        "id": id,
+                        "result": result
+                    });
+
+                    stream.write_all(response.to_string().as_bytes()).unwrap();
+                    stream.shutdown(std::net::Shutdown::Write).unwrap();
+                });
+                client.join().unwrap();
+                server.join().unwrap();
+            });
+        });
+        if let Err(e) = result {
+            fs::remove_file(socket).unwrap();
+            resume_unwind(e);
+        }
+    }
+
     #[test]
     fn status() {
-        thread::scope(|s| {
-            let d = env::temp_dir();
-            let socket = path::Path::new(&d)
-                .join(Uuid::new_v4().to_string())
-                .to_str()
-                .unwrap()
-                .to_string();
+        helper(
+            parser::ClientSubCommands::Status,
+            command::Command::Status,
+            serde_json::json!({
+                "status": "ok",
+            }),
+        );
 
-            let socket_client = socket.clone();
-            let listener = net::UnixListener::bind(&socket).unwrap();
+        // thread::scope(|s| {
+        //     let d = env::temp_dir();
+        //     let socket = path::Path::new(&d)
+        //         .join(Uuid::new_v4().to_string())
+        //         .to_str()
+        //         .unwrap()
+        //         .to_string();
 
-            let client = s.spawn(move || {
-                let result = panic::catch_unwind(|| {
-                    run(socket_client.clone(), parser::ClientSubCommands::Status).unwrap();
-                });
-                if let Err(e) = result {
-                    fs::remove_file(socket_client).unwrap();
-                    resume_unwind(e);
-                }
-            });
+        //     let socket_client = socket.clone();
+        //     let listener = net::UnixListener::bind(&socket).unwrap();
 
-            let server = s.spawn(move || {
-                let (mut stream, _) = listener.accept().unwrap(); // ← 接続待ちでブロックする
-                let mut buf = String::new();
-                stream.read_to_string(&mut buf).unwrap();
-                stream.shutdown(std::net::Shutdown::Read).unwrap();
-                let (id, cmd) = request::parse_request(&buf).unwrap();
-                assert_eq!(command::Command::Status, cmd);
+        //     let client = s.spawn(move || {
+        //         let result = panic::catch_unwind(|| {
+        //             run(socket_client.clone(), parser::ClientSubCommands::Status).unwrap();
+        //         });
+        //         if let Err(e) = result {
+        //             fs::remove_file(socket_client).unwrap();
+        //             resume_unwind(e);
+        //         }
+        //     });
 
-                let response = serde_json::json!({
-                    "jsonrpc": "2.0",
-                    "id": id,
-                    "result": {
-                        "status": "ok",
-                    }
-                });
+        //     let server = s.spawn(move || {
+        //         let (mut stream, _) = listener.accept().unwrap(); // ← 接続待ちでブロックする
+        //         let mut buf = String::new();
+        //         stream.read_to_string(&mut buf).unwrap();
+        //         stream.shutdown(std::net::Shutdown::Read).unwrap();
+        //         let (id, cmd) = request::parse_request(&buf).unwrap();
+        //         assert_eq!(command::Command::Status, cmd);
 
-                stream.write_all(response.to_string().as_bytes()).unwrap();
-                stream.shutdown(std::net::Shutdown::Write).unwrap();
-            });
+        //         let response = serde_json::json!({
+        //             "jsonrpc": "2.0",
+        //             "id": id,
+        //             "result": {
+        //                 "status": "ok",
+        //             }
+        //         });
 
-            client.join().unwrap();
-            server.join().unwrap();
+        //         stream.write_all(response.to_string().as_bytes()).unwrap();
+        //         stream.shutdown(std::net::Shutdown::Write).unwrap();
+        //     });
 
-            fs::remove_file(socket).unwrap();
-        });
+        //     client.join().unwrap();
+        //     server.join().unwrap();
+
+        //     fs::remove_file(socket).unwrap();
+        // });
     }
 }
