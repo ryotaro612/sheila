@@ -22,13 +22,11 @@ pub(crate) struct Cli {
     pub(crate) verbose: bool,
 }
 
-impl Cli {
-    /**
-     * Parses command line arguments.
-     */
-    pub(crate) fn parse(args: Vec<String>) -> Result<Cli, String> {
-        Cli::try_parse_from(args).map_err(|e| e.to_string())
-    }
+/**
+ * Parses command line arguments.
+ */
+pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::Error> {
+    Cli::try_parse_from(args)
 }
 
 #[derive(Debug, Subcommand)]
@@ -51,6 +49,7 @@ pub(crate) enum ClientSubCommands {
     Play(PlayArgs),
     Status,
     Stop,
+    Shutdown,
 }
 
 /**
@@ -92,7 +91,7 @@ mod tests {
             .collect();
 
         // actual
-        let actual = Cli::parse(args).unwrap();
+        let actual = parse(args).unwrap();
 
         // assert
         let mut expected = std::env::temp_dir();
@@ -110,7 +109,7 @@ mod tests {
             .collect();
 
         // actual
-        let actual = Cli::parse(args).unwrap();
+        let actual = parse(args).unwrap();
         // assert
         assert!(actual.verbose);
     }
@@ -124,26 +123,26 @@ mod tests {
             .collect();
 
         // actual
-        let actual = Cli::parse(args).unwrap();
+        let actual = parse(args).unwrap();
         // assert
         assert!(actual.verbose);
     }
 
     #[test]
     fn test_client_has_display_subcommand() {
-        let args: Vec<String> = vec!["sheila", "--verbose", "client", "display", "image.png"]
+        let args: Vec<String> = vec!["sheila", "--verbose", "client", "play", "movie.mp4"]
             .into_iter()
             .map(String::from)
             .collect();
 
         // actual
-        let actual = Cli::parse(args).unwrap();
+        let actual = parse(args).unwrap();
 
         match actual.command {
             Commands::Client(client_args) => match client_args.command {
                 ClientSubCommands::Play(args) => {
                     assert_eq!(None, args.monitor);
-                    assert_eq!("image.png", args.file);
+                    assert_eq!("movie.mp4", args.file);
                 }
                 _ => panic!("unexpected subcommand"),
             },
@@ -159,10 +158,10 @@ mod tests {
             "sheila",
             "--verbose",
             "client",
-            "display",
+            "play",
             "--monitor",
             "eDP-1",
-            "image.png",
+            "movie.mp4",
         ]);
         // actual
         let actual = parse(args).unwrap();

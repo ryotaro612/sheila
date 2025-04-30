@@ -16,6 +16,7 @@ pub(crate) fn run(
         ClientSubCommands::Play(a) => display::display(&cli, &id, a),
         ClientSubCommands::Stop => stop::stop(&cli, id.as_str()),
         ClientSubCommands::Status => status::status(&cli, id.as_str()),
+        ClientSubCommands::Shutdown => unimplemented!("implement shutdown"),
     };
     match res {
         Ok(s) => {

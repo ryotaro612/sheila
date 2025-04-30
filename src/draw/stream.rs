@@ -1,6 +1,6 @@
 use gdk4::Paintable;
-use gstreamer::prelude::{ElementExt, ElementExtManual, GstBinExtManual};
-use gstreamer::{bus, element_error};
+use gstreamer::bus;
+use gstreamer::prelude::{ElementExt, GstBinExtManual};
 use gtk4::prelude::*;
 /**
 * gst-launch-1.0 -v   filesrc location=~/a.mp4 !   qtdemux name=demux   demux.video_0 ! queue ! vaapidecodebin ! videoconvert !  aspectratiocrop  aspect-ratio=16/9 ! gtk4paintablesink

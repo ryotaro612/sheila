@@ -3,11 +3,13 @@ use std::io::Read;
 use std::io::Write;
 use std::net;
 use std::result;
-
+/**
+ */
 pub(crate) struct SocketClient {
     socket: String,
 }
-
+/*
+ */
 impl Client for SocketClient {
     fn send(
         &self,
