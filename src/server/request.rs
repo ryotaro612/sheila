@@ -24,7 +24,7 @@ pub(crate) fn parse_request(
  */
 fn make_command(r: &JsonRpcRequest) -> result::Result<command::Command, response::Response> {
     match r.method.as_str() {
-        "stop" => Ok(command::Command::Stop),
+        "stop" => Ok(command::Command::Stop { monitor: None }),
         "status" => Ok(command::Command::Status),
         "display" => r
             .as_display_cmd()
@@ -94,7 +94,7 @@ mod tests {
             id: "id".to_string(),
         };
         let actual = make_command(&r).unwrap();
-        assert_eq!(command::Command::Stop, actual);
+        assert_eq!(command::Command::Stop { monitor: None }, actual);
     }
 
     #[test]

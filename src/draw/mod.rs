@@ -48,7 +48,9 @@ impl<'a> Drawer<'a> {
                         let res = state.execute(&app, &cmd);
                         if let Err(e) = sender.send(res) {
                             log::error!("disconnected: {e}");
-                            state.execute(&app, &Command::Stop {}).unwrap();
+                            state
+                                .execute(&app, &Command::Stop { monitor: None })
+                                .unwrap();
                         }
                     }
                 );

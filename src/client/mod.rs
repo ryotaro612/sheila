@@ -38,6 +38,8 @@ pub(crate) fn generate_id() -> String {
 #[cfg(test)]
 mod run_tests {
     use super::run;
+    use crate::parser::StopArgs;
+    use crate::server::request;
     use crate::{command, parser};
     use std::io::{Read, Write};
     use std::os::unix::net;
@@ -45,7 +47,25 @@ mod run_tests {
     use std::{env, fs, panic, path, thread};
     use uuid::Uuid;
 
-    use crate::server::request;
+    #[test]
+    fn status() {
+        let res = helper(
+            parser::ClientSubCommands::Status,
+            command::Command::Status,
+            serde_json::json!(true),
+        );
+        res.unwrap();
+    }
+
+    #[test]
+    fn stop() {
+        let res = helper(
+            parser::ClientSubCommands::Stop(StopArgs { monitor: None }),
+            command::Command::Stop { monitor: None },
+            serde_json::json!(true),
+        );
+        res.unwrap();
+    }
 
     fn helper(
         arg_cmd: parser::ClientSubCommands,
@@ -90,17 +110,5 @@ mod run_tests {
             resume_unwind(e);
         }
         result.unwrap()
-    }
-
-    #[test]
-    fn status() {
-        let res = helper(
-            parser::ClientSubCommands::Status,
-            command::Command::Status,
-            serde_json::json!({
-                "status": "ok",
-            }),
-        );
-        res.unwrap();
     }
 }

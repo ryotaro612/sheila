@@ -81,7 +81,7 @@ pub(crate) struct StopArgs {
     /*
      */
     #[arg(long)]
-    monitor: Option<String>,
+    pub(crate) monitor: Option<String>,
 }
 
 /**

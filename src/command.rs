@@ -3,7 +3,9 @@
  */
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) enum Command {
-    Stop,
+    Stop {
+        monitor: Option<String>,
+    },
     Status,
     Play {
         file: String,
