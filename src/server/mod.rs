@@ -2,7 +2,7 @@ use std::result;
 use std::thread::sleep;
 use std::time::Duration;
 mod handler;
-mod request;
+pub(crate) mod request;
 mod response;
 mod server;
 use crate::client as c;
