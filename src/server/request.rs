@@ -53,7 +53,7 @@ fn make_command(r: &JsonRpcRequest) -> result::Result<command::Command, response
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct JsonRpcRequest {
+struct JsonRpcRequest {
     jsonrpc: String,
     method: String,
     params: Option<serde_json::Value>,
