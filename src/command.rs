@@ -1,11 +1,11 @@
-#[derive(Debug, PartialEq, Clone)]
 /**
  *
  */
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) enum Command {
     Stop,
     Status,
-    Display {
+    Play {
         file: String,
         monitor: Option<String>,
     },

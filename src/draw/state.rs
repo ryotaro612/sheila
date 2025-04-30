@@ -42,7 +42,7 @@ impl State {
             }
             command::Command::Status { .. } => Ok(serde_json::json!({})),
             // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
-            command::Command::Display { file, monitor } => {
+            command::Command::Play { file, monitor } => {
                 if self.is_running == false {
                     return Err(make_server_error("the background service is down"));
                 }

@@ -45,7 +45,7 @@ mod run_tests {
     use uuid::Uuid;
 
     #[test]
-    fn shutdown() {
+    fn status() {
         thread::scope(|s| {
             let d = env::temp_dir();
             let socket = path::Path::new(&d)

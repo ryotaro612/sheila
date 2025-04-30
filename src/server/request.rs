@@ -1,17 +1,28 @@
 /**
- *
  */
 use crate::command;
 use crate::server::response;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::result;
+/*
+
+*/
+pub(crate) fn parse_request(
+    request: &str,
+) -> Result<(String, command::Command), response::Response> {
+    let parsed: serde_json::Value =
+        serde_json::from_str(request).map_err(|e| response::Response::ParseError { error: e })?;
+    let json_rpc_request: JsonRpcRequest = serde_json::from_value(parsed)
+        .map_err(|error| response::Response::InvalidRequest { error })?;
+
+    let command = make_command(&json_rpc_request)?;
+    Ok((json_rpc_request.id, command))
+}
+
 /**
- *
  */
-pub(crate) fn make_command(
-    r: &JsonRpcRequest,
-) -> result::Result<command::Command, response::Response> {
+fn make_command(r: &JsonRpcRequest) -> result::Result<command::Command, response::Response> {
     match r.method.as_str() {
         "stop" => Ok(command::Command::Stop),
         "status" => Ok(command::Command::Status),
@@ -50,11 +61,11 @@ impl DisplayCommandPresenter for JsonRpcRequest {
             .as_str()
             .ok_or("file is not a string")?;
         match params.get("monitor") {
-            Some(serde_json::Value::String(s)) => Ok(command::Command::Display {
+            Some(serde_json::Value::String(s)) => Ok(command::Command::Play {
                 file: file.to_string(),
                 monitor: Some(s.to_string()),
             }),
-            _ => Ok(command::Command::Display {
+            _ => Ok(command::Command::Play {
                 file: file.to_string(),
                 monitor: None,
             }),
@@ -118,7 +129,7 @@ mod tests {
         };
         let actual = make_command(&r).unwrap();
         match actual {
-            command::Command::Display { file, monitor } => {
+            command::Command::Play { file, monitor } => {
                 assert_eq!("image.png", file);
                 assert_eq!(Some("eDP-1".to_string()), monitor);
             }
@@ -138,7 +149,7 @@ mod tests {
         };
         let actual = make_command(&r).unwrap();
         assert_eq!(
-            command::Command::Display {
+            command::Command::Play {
                 file: "image.png".to_string(),
                 monitor: None,
             },
@@ -159,7 +170,7 @@ mod tests {
         };
         let actual = make_command(&r).unwrap();
         assert_eq!(
-            command::Command::Display {
+            command::Command::Play {
                 file: "image.png".to_string(),
                 monitor: None,
             },

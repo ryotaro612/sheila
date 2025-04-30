@@ -1,5 +1,5 @@
 use crate::command;
-use crate::server::request::{self, make_command};
+use crate::server::request::parse_request;
 use crate::server::response;
 use serde_json;
 use std::sync::mpsc;
@@ -37,30 +37,26 @@ impl<'a> DefaultHandler<'a> {
      * passes a recived command to the GUI handler.
      */
     fn process(&self, payload: &str) -> Result<response::Response, response::Response> {
-        let parsed: serde_json::Result<serde_json::Value> = serde_json::from_str(payload);
-        let json_value = parsed.map_err(|error| response::Response::ParseError { error })?;
-        let json_rpc_request: request::JsonRpcRequest = serde_json::from_value(json_value)
-            .map_err(|error| response::Response::InvalidRequest { error })?;
+        let (id, command) = parse_request(&payload)?;
 
-        let command = make_command(&json_rpc_request)?;
-        self.command_sender.send(command).map_err(|error| {
+        self.command_sender.send(command.clone()).map_err(|error| {
             log::error!(
-                "error sending command. request: {:?} error: {error}",
-                json_rpc_request,
+                "error sending command. command: {:?} error: {error}",
+                command
             );
             response::Response::ServerError {
-                id: json_rpc_request.id.clone(),
+                id: id.clone(),
                 error: error.to_string(),
             }
         })?;
 
         let response = self.result_receiver.recv().map_err(|error| {
             log::debug!(
-                "error receiving result: request: {:?}, error: {error}",
-                &json_rpc_request
+                "error receiving result: command: {:?}, error: {error}",
+                command
             );
             response::Response::ServerError {
-                id: json_rpc_request.id.clone(),
+                id: id.clone(),
                 error: error.to_string(),
             }
         })?;
@@ -69,21 +65,15 @@ impl<'a> DefaultHandler<'a> {
             Err(err_reason) => match err_reason {
                 command::ErrorReason::InvalidParams { reason } => {
                     Err(response::Response::InvalidParams {
-                        id: json_rpc_request.id.clone(),
+                        id: id.clone(),
                         error: reason,
                     })
                 }
                 command::ErrorReason::ServerError { reason } => {
-                    Err(response::Response::ServerError {
-                        id: json_rpc_request.id.clone(),
-                        error: reason,
-                    })
+                    Err(response::Response::ServerError { id, error: reason })
                 }
             },
-            Ok(v) => Ok(response::Response::Success {
-                id: json_rpc_request.id.clone(),
-                result: v,
-            }),
+            Ok(v) => Ok(response::Response::Success { id, result: v }),
         }
     }
 }
