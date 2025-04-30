@@ -14,7 +14,7 @@ pub(crate) fn run(
     let id = generate_id();
     let res = match args {
         ClientSubCommands::Play(a) => display::display(&cli, &id, a),
-        ClientSubCommands::Stop => stop::stop(&cli, id.as_str()),
+        ClientSubCommands::Stop(args) => stop::stop(&cli, id.as_str()),
         ClientSubCommands::Status => status::status(&cli, id.as_str()),
         ClientSubCommands::Shutdown => unimplemented!("implement shutdown"),
     };

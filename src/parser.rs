@@ -48,7 +48,7 @@ pub(crate) enum ClientSubCommands {
     #[command(about = "Plays an MP4 file.")]
     Play(PlayArgs),
     Status,
-    Stop,
+    Stop(StopArgs),
     Shutdown,
 }
 
@@ -70,6 +70,14 @@ pub(crate) struct PlayArgs {
     pub(crate) monitor: Option<String>,
 }
 
+#[derive(Debug, Args)]
+pub(crate) struct StopArgs {
+    /*
+     */
+    #[arg(long)]
+    monitor: Option<String>,
+}
+
 /**
 Defines the default path of the socket file.
 */
@@ -81,6 +89,7 @@ fn get_default_log_path() -> OsString {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     #[test]
     fn test_default_socket_file_is_defined() {
@@ -188,13 +197,38 @@ mod tests {
         // assert
         match actual.unwrap().command {
             Commands::Client(client_args) => match client_args.command {
-                ClientSubCommands::Stop => {
-                    // nop
+                ClientSubCommands::Stop(args) => {
+                    assert_eq!(None, args.monitor);
                 }
                 _ => panic!("unexpected subcommand"),
             },
             _ => panic!("unexpected command"),
         }
+    }
+
+    #[test]
+    fn client_provides_shutdown_command() {
+        // arrange
+        let args = arrange(vec!["sheila", "client", "shutdown"]);
+        // actual
+        let actual = parse(args).unwrap().command;
+        // assert
+        if let Commands::Client(ClientArgs {
+            command: ClientSubCommands::Shutdown,
+        }) = actual
+        {
+        } else {
+            panic!("unexpected command: {:?}", actual);
+        }
+        // match actual.unwrap().command {
+        //     Commands::Client(client_args) => match client_args.command {
+        //         ClientSubCommands::Stop(args) => {
+        //             assert_eq!(None, args.monitor);
+        //         }
+        //         _ => panic!("unexpected subcommand"),
+        //     },
+        //     _ => panic!("unexpected command"),
+        // }
     }
 
     #[test]
