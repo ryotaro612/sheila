@@ -40,10 +40,10 @@ impl Wallpaper for gtk4::Application {
     }
 
     fn shutdown(&self) {
+        self.quit();
         unsafe {
             gstreamer::deinit();
         }
-        self.quit();
     }
     fn default_connector(&self) -> Result<String, String> {
         let monitor = detect_gdk_monitor(&None)?;

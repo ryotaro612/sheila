@@ -29,15 +29,21 @@ impl State {
         cmd: &command::Command,
     ) -> result::Result<serde_json::Value, command::ErrorReason> {
         match cmd {
-            command::Command::Stop { .. } => {
+            command::Command::Stop { monitor } => {
                 wallpaper.stop();
                 Ok(serde_json::Value::Null)
             }
-            command::Command::Shutdown { .. } => {
+            command::Command::Shutdown => {
+                self.playing.iter().for_each(|(connector, stream)| {
+                    stream.stop().unwrap();
+                    //wallpaper.close_window_by_connector(connector);
+                });
+
+                self.playing.clear();
                 wallpaper.shutdown();
                 Ok(shutdown_result())
             }
-            command::Command::Status { .. } => Ok(serde_json::json!({})),
+            command::Command::Status { .. } => Ok(serde_json::json!(true)),
             // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
             command::Command::Play { file, monitor } => {
                 let connector = match monitor {

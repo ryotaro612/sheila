@@ -37,22 +37,6 @@ impl<'a> Player<'a> {
             app,
             async move {
                 let mut state = state::State::new();
-
-                // let mut f = glib::clone!(
-                //     #[weak]
-                //     app,
-                //     move |cmd: Command| {
-                //         let mut is_shutdown_result = false;
-                //         let result = state.execute(&app, &cmd).and_then(|value| {
-                //             is_shutdown_result = value == shutdown_result();
-                //             Ok(value)
-                //         });
-                //         let response = sender.send(result);
-                //         if response.is_err() || is_shutdown_result {
-                //             app.shutdown();
-                //         }
-                //     }
-                // );
                 loop {
                     match dr::ReceivedFuture::new(arc_receiver.clone()).await {
                         Ok(cmd) => {
@@ -73,7 +57,6 @@ impl<'a> Player<'a> {
                 }
             }
         ));
-
         match app.start() {
             glib::ExitCode::SUCCESS => Ok(()),
             code => Err(format!(

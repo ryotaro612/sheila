@@ -1,5 +1,5 @@
 use gdk4::prelude::MonitorExt;
-use gtk4::{Application, Window};
+use gtk4::{prelude::GtkWindowExt, Application, Window};
 use gtk4_layer_shell::LayerShell;
 
 /**
