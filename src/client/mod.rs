@@ -8,7 +8,7 @@ pub(crate) mod stop;
 use crate::parser;
 
 pub(crate) fn run(
-    socket: String,
+    socket: &str,
     args: parser::ClientSubCommands,
 ) -> std::result::Result<(), String> {
     let cli: client::SocketClient = crate::client::client::SocketClient::new(&socket);
@@ -29,9 +29,7 @@ pub(crate) fn run(
         Err(s) => Err(s),
     }
 }
-/**
-TODO move
-*/
+
 pub(crate) fn generate_id() -> String {
     Uuid::new_v4().to_string()
 }
@@ -146,11 +144,11 @@ mod tests {
             .to_str()
             .unwrap()
             .to_string();
+        let sokcet_to_remove = socket.clone();
         let result = panic::catch_unwind(|| {
             thread::scope(|s| {
-                let socket_client = socket.clone();
                 let listener = net::UnixListener::bind(&socket).unwrap();
-                let client = s.spawn(move || run(socket_client.clone(), arg_cmd));
+                let client = s.spawn(move || run(&socket, arg_cmd));
 
                 let server = s.spawn(move || {
                     let (mut stream, _) = listener.accept().unwrap();
@@ -173,7 +171,7 @@ mod tests {
             })
         });
         if let Err(e) = result {
-            fs::remove_file(socket).unwrap();
+            fs::remove_file(sokcet_to_remove).unwrap();
             resume_unwind(e);
         }
         result.unwrap()

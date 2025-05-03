@@ -2,9 +2,9 @@ use log;
 use std::process::{self};
 mod client;
 mod command;
-mod draw;
 mod logger;
 mod parser;
+mod player;
 mod server;
 
 fn main() {
@@ -15,8 +15,10 @@ fn main() {
     logger::init_log(cli.verbose);
 
     match cli.command {
-        parser::Commands::Server => server::run(cli.socket),
-        parser::Commands::Client(client_args) => client::run(cli.socket, client_args.command),
+        parser::Commands::Server => server::run(cli.socket.as_str()),
+        parser::Commands::Client(client_args) => {
+            client::run(cli.socket.as_str(), client_args.command)
+        }
     }
     .unwrap_or_else(|e| {
         log::error!("{}", e);

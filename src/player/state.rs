@@ -3,7 +3,7 @@ use std::result;
 
 use crate::{
     command::{self, make_server_error},
-    draw::wallpaper,
+    player::wallpaper,
 };
 
 use super::stream::Stream;

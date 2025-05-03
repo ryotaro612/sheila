@@ -5,7 +5,7 @@ mod state;
 mod stream;
 mod wallpaper;
 mod window;
-use crate::draw::receiver as dr;
+use crate::player::receiver as dr;
 
 use gtk4::glib;
 use std::result;
