@@ -1,10 +1,12 @@
 use crate::command::{self, Command};
+use std::sync::{Arc, Mutex};
 mod monitor;
-pub(crate) mod state;
+mod state;
 mod stream;
 mod wallpaper;
 mod window;
 use gtk4::glib;
+pub(crate) mod operation;
 mod receiver;
 use std::result;
 use std::sync::{self, mpsc};
@@ -29,17 +31,18 @@ impl<'a> Player<'a> {
     pub(crate) fn run(self) -> result::Result<(), String> {
         let sender = self.result_sender.clone();
         let arc_receiver = sync::Arc::new(sync::Mutex::new(self.command_receiver));
-        let app = <gtk4::Application as wallpaper::Wallpaper>::new_application()?;
+
+        let state = Arc::new(Mutex::new(state::State::new()));
+        let app = <gtk4::Application as wallpaper::Wallpaper>::new_application(&state)?;
 
         glib::spawn_future_local(glib::clone!(
             #[weak]
             app,
             async move {
-                let mut state = state::State::new();
                 loop {
                     match receiver::ReceivedFuture::new(arc_receiver.clone()).await {
                         Ok(cmd) => {
-                            let result = state.execute(&app, &cmd);
+                            let result = operation::operate(&state, &app, &cmd);
                             let response = sender.send(result);
                             if response.is_err() {
                                 app.shutdown();

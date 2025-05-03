@@ -1,4 +1,4 @@
-use super::player::state;
+use super::player::operation;
 /// JSON RPC response
 use std::{io::Write, os::unix::net};
 
@@ -28,7 +28,7 @@ impl Response {
     }
     pub(crate) fn is_shutdown_response(&self) -> bool {
         match self {
-            Response::Success { id: _, result: v } => state::shutdown_result() == *v,
+            Response::Success { id: _, result: v } => operation::shutdown_result() == *v,
             _ => false,
         }
     }

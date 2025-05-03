@@ -1,11 +1,9 @@
 use gdk4::prelude::MonitorExt;
-use gtk4::{prelude::GtkWindowExt, Application, Window};
+use gtk4::{Application, Window};
 use gtk4_layer_shell::LayerShell;
 
-/**
-Initializes a GTK window and attaches it to the specified monitor (connector).
-Returns an error if the monitor cannot be detected or the window cannot be created.
-*/
+/// Initializes a GTK window and attaches it to the specified monitor (connector).
+/// Returns an error if the monitor cannot be detected or the window cannot be created.
 pub(crate) fn init_window(app: &Application, monitor: &gdk4::Monitor) -> Result<Window, String> {
     let window = Window::builder().application(app).build();
     window.init_layer_shell();
@@ -19,8 +17,8 @@ pub(crate) fn init_window(app: &Application, monitor: &gdk4::Monitor) -> Result<
     Ok(window)
 }
 
-// Returns the width and height of the monitor where the window is displayed.
-// Returns an error if the monitor cannot be determined.
+/// Returns the width and height of the monitor where the window is displayed.
+/// Returns an error if the monitor cannot be determined.
 pub(crate) fn get_rectangle(window: &Window) -> Result<(i32, i32), String> {
     let rec = window.monitor()
         .map(|m| m.geometry())

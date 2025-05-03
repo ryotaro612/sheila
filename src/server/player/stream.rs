@@ -2,6 +2,7 @@ use gdk4::Paintable;
 use gstreamer::bus;
 use gstreamer::prelude::{ElementExt, GstBinExtManual};
 use gtk4::prelude::*;
+use std::rc;
 /**
 * gst-launch-1.0 -v   filesrc location=~/a.mp4 !   qtdemux name=demux   demux.video_0 ! queue ! vaapidecodebin ! videoconvert !  aspectratiocrop  aspect-ratio=16/9 ! gtk4paintablesink
  gst-launch-1.0 -v \
@@ -10,9 +11,10 @@ use gtk4::prelude::*;
   video-filter="aspectratiocrop aspect-ratio=16/9" \
   video-sink=gtk4paintablesink
 */
+#[derive(Debug, Clone)]
 pub(crate) struct Stream {
     element: gstreamer::Element,
-    bus_watch_guard: bus::BusWatchGuard,
+    bus_watch_guard: rc::Rc<bus::BusWatchGuard>,
     paintable: Paintable,
 }
 
@@ -38,8 +40,6 @@ impl Stream {
             .property("aspect-ratio", gstreamer::Fraction::new(width, height))
             .build()
             .map_err(|e| e.to_string())?;
-
-        // video-filter に設定（Bin に入れる必要あり）
 
         let filter_bin = gstreamer::Bin::new();
         filter_bin.add_many([&crop]).unwrap();
@@ -85,7 +85,7 @@ impl Stream {
 
         Ok(Stream {
             element: playbin,
-            bus_watch_guard,
+            bus_watch_guard: rc::Rc::new(bus_watch_guard),
             paintable,
         })
     }
