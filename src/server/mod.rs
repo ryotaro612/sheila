@@ -1,10 +1,10 @@
 use std::result;
 mod handler;
+mod player;
 pub(crate) mod request;
 mod response;
 mod server;
 use crate::command;
-use crate::player;
 use std::sync::mpsc;
 use std::thread;
 

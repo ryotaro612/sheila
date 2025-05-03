@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 use std::result;
 
-use crate::{
-    command::{self, make_server_error},
-    player::wallpaper,
-};
+use crate::command::{self, make_server_error};
 
 use super::stream::Stream;
+use super::wallpaper;
 ///
 pub(crate) struct State {
     playing: HashMap<String, Stream>,

@@ -4,7 +4,6 @@ mod client;
 mod command;
 mod logger;
 mod parser;
-mod player;
 mod server;
 
 fn main() {

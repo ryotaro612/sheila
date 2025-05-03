@@ -1,12 +1,11 @@
 use crate::command::{self, Command};
 mod monitor;
-mod receiver;
 pub(crate) mod state;
 mod stream;
 mod wallpaper;
 mod window;
-use crate::player::receiver as dr;
 use gtk4::glib;
+mod receiver;
 use std::result;
 use std::sync::{self, mpsc};
 use wallpaper::Wallpaper;
@@ -38,7 +37,7 @@ impl<'a> Player<'a> {
             async move {
                 let mut state = state::State::new();
                 loop {
-                    match dr::ReceivedFuture::new(arc_receiver.clone()).await {
+                    match receiver::ReceivedFuture::new(arc_receiver.clone()).await {
                         Ok(cmd) => {
                             let result = state.execute(&app, &cmd);
                             let response = sender.send(result);
