@@ -7,9 +7,7 @@ use crate::{
 };
 
 use super::stream::Stream;
-/**
- *
- */
+///
 pub(crate) struct State {
     playing: HashMap<String, Stream>,
 }
@@ -24,9 +22,7 @@ impl State {
         }
     }
 
-    /**
-     * Stop command returns OK.
-     */
+    ///
     pub(crate) fn execute(
         &mut self,
         wallpaper: &impl wallpaper::Wallpaper,
@@ -38,8 +34,8 @@ impl State {
                 Ok(serde_json::Value::Null)
             }
             command::Command::Shutdown { .. } => {
-                wallpaper.stop();
-                Ok(serde_json::Value::Null)
+                wallpaper.shutdown();
+                Ok(shutdown_result())
             }
             command::Command::Status { .. } => Ok(serde_json::json!({})),
             // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
@@ -65,4 +61,8 @@ impl State {
             }
         }
     }
+}
+///
+pub(crate) fn shutdown_result() -> serde_json::Value {
+    return serde_json::json!("Server is terminating");
 }

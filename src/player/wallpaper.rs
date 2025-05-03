@@ -18,6 +18,8 @@ pub(crate) trait Wallpaper {
 
     ///
     fn stop(&self);
+    /// Terminate the application.
+    fn shutdown(&self);
     ///
     fn display(&self, connector: &str, file: &str) -> Result<Stream, command::ErrorReason>;
     ///
@@ -36,6 +38,13 @@ impl Wallpaper for gtk4::Application {
             }
         });
     }
+
+    fn shutdown(&self) {
+        unsafe {
+            gstreamer::deinit();
+        }
+        self.quit();
+    }
     fn default_connector(&self) -> Result<String, String> {
         let monitor = detect_gdk_monitor(&None)?;
         monitor
@@ -43,7 +52,7 @@ impl Wallpaper for gtk4::Application {
             .map(|g| g.to_string())
             .ok_or("failed to resolve the connector of the default monitor".to_string())
     }
-
+    ///
     fn new_application() -> Result<gtk4::Application, String> {
         let app = Application::builder()
             .application_id("dev.ryotaro.sheila")
@@ -61,12 +70,7 @@ impl Wallpaper for gtk4::Application {
         self.run_with_args(args)
     }
 
-    fn stop(&self) {
-        unsafe {
-            gstreamer::deinit();
-        }
-        self.quit();
-    }
+    fn stop(&self) {}
 
     // $  gst-launch-1.0 playbin uri=a.mp4 mute=true video-sink="videoconvert  ! aspectratiocrop aspect-ratio=9/9 ! gtk4paintablesink sync=false"
     // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads

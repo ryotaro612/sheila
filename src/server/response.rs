@@ -1,3 +1,4 @@
+use crate::player::state;
 /// JSON RPC response
 use std::{io::Write, os::unix::net};
 
@@ -25,12 +26,9 @@ impl Response {
             Response::InternalError { error } => new_err_response(&-32603, error, &None),
         }
     }
-    pub(crate) fn is_stop_request(&self) -> bool {
+    pub(crate) fn is_shutdown_response(&self) -> bool {
         match self {
-            Response::Success {
-                id: _,
-                result: serde_json::Value::Null,
-            } => true,
+            Response::Success { id: _, result: v } => state::shutdown_result() == *v,
             _ => false,
         }
     }

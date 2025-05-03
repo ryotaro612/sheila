@@ -45,7 +45,7 @@ impl<H: handler::Handler> Server<H> {
             };
             response::write_response(&stream, &response);
             self.shutdown(&stream);
-            if response.is_stop_request() {
+            if response.is_shutdown_response() {
                 break;
             }
         }

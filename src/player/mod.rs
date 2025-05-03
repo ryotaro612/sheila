@@ -1,12 +1,11 @@
 use crate::command::{self, Command};
 mod monitor;
 mod receiver;
-mod state;
+pub(crate) mod state;
 mod stream;
 mod wallpaper;
 mod window;
 use crate::player::receiver as dr;
-
 use gtk4::glib;
 use std::result;
 use std::sync::{self, mpsc};
@@ -39,25 +38,35 @@ impl<'a> Player<'a> {
             async move {
                 let mut state = state::State::new();
 
-                let mut f = glib::clone!(
-                    #[weak]
-                    app,
-                    move |cmd: Command| {
-                        let res = state.execute(&app, &cmd);
-                        if let Err(e) = sender.send(res) {
-                            state
-                                .execute(&app, &Command::Stop { monitor: None })
-                                .unwrap();
-                        }
-                    }
-                );
+                // let mut f = glib::clone!(
+                //     #[weak]
+                //     app,
+                //     move |cmd: Command| {
+                //         let mut is_shutdown_result = false;
+                //         let result = state.execute(&app, &cmd).and_then(|value| {
+                //             is_shutdown_result = value == shutdown_result();
+                //             Ok(value)
+                //         });
+                //         let response = sender.send(result);
+                //         if response.is_err() || is_shutdown_result {
+                //             app.shutdown();
+                //         }
+                //     }
+                // );
                 loop {
-                    let received_command = dr::ReceivedFuture::new(arc_receiver.clone()).await;
-                    match received_command {
-                        Ok(cmd) => f(cmd),
-                        Err(r_err) => {
-                            // https://doc.rust-lang.org/std/sync/mpsc/struct.RecvError.html
-                            log::debug!("disconnected: {r_err}");
+                    match dr::ReceivedFuture::new(arc_receiver.clone()).await {
+                        Ok(cmd) => {
+                            let result = state.execute(&app, &cmd);
+                            let response = sender.send(result);
+                            if response.is_err() {
+                                app.shutdown();
+                            }
+                            if response.is_err() || cmd == Command::Shutdown {
+                                break;
+                            }
+                        }
+                        Err(_) => {
+                            app.shutdown();
                             break;
                         }
                     }

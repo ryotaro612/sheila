@@ -27,9 +27,7 @@ impl<'a> DefaultHandler<'a> {
             result_receiver,
         }
     }
-    /**
-     * passes a recived command to the GUI handler.
-     */
+    /// Passes a recived command to the GUI handler.
     fn process(&self, payload: &str) -> Result<response::Response, response::Response> {
         let (id, command) = parse_request(&payload)?;
 
@@ -44,6 +42,7 @@ impl<'a> DefaultHandler<'a> {
             }
         })?;
 
+        // Uses the Ok value as the value of the result field.
         let response = self.result_receiver.recv().map_err(|error| {
             log::debug!(
                 "error receiving result: command: {:?}, error: {error}",
