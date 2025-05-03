@@ -11,25 +11,23 @@ use gtk4::glib;
 use std::result;
 use std::sync::{self, mpsc};
 use wallpaper::Wallpaper;
-pub(crate) struct Drawer<'a> {
+pub(crate) struct Player<'a> {
     command_receiver: mpsc::Receiver<command::Command>,
     result_sender: &'a mpsc::Sender<Result<serde_json::Value, command::ErrorReason>>,
 }
 
-impl<'a> Drawer<'a> {
+impl<'a> Player<'a> {
     pub(crate) fn new(
         command_receiver: mpsc::Receiver<command::Command>,
         result_sender: &'a mpsc::Sender<Result<serde_json::Value, command::ErrorReason>>,
     ) -> Self {
-        Drawer {
+        Player {
             command_receiver,
             result_sender,
         }
     }
 
-    /**
-     *
-     */
+    ///
     pub(crate) fn run(self) -> result::Result<(), String> {
         let sender = self.result_sender.clone();
         let arc_receiver = sync::Arc::new(sync::Mutex::new(self.command_receiver));
@@ -47,7 +45,6 @@ impl<'a> Drawer<'a> {
                     move |cmd: Command| {
                         let res = state.execute(&app, &cmd);
                         if let Err(e) = sender.send(res) {
-                            log::error!("disconnected: {e}");
                             state
                                 .execute(&app, &Command::Stop { monitor: None })
                                 .unwrap();
@@ -55,8 +52,8 @@ impl<'a> Drawer<'a> {
                     }
                 );
                 loop {
-                    let res = dr::ReceivedFuture::new(arc_receiver.clone()).await;
-                    match res {
+                    let received_command = dr::ReceivedFuture::new(arc_receiver.clone()).await;
+                    match received_command {
                         Ok(cmd) => f(cmd),
                         Err(r_err) => {
                             // https://doc.rust-lang.org/std/sync/mpsc/struct.RecvError.html

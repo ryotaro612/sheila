@@ -10,22 +10,19 @@ use super::stream::Stream;
 use super::window::{get_rectangle, init_window};
 
 pub(crate) trait Wallpaper {
+    ///
     fn new_application() -> Result<impl Wallpaper, String>;
-    /**
-     *
-     */
+
+    ///
     fn start(&self) -> glib::ExitCode;
-    /**
-     *
-     */
+
+    ///
     fn stop(&self);
-    /**
-     *
-     */
+    ///
     fn display(&self, connector: &str, file: &str) -> Result<Stream, command::ErrorReason>;
-
+    ///
     fn default_connector(&self) -> Result<String, String>;
-
+    ///
     fn close_window_by_connector(&self, connector: &str);
 }
 

@@ -8,14 +8,14 @@ use crate::player;
 use std::sync::mpsc;
 use std::thread;
 
-///  Initializes the log system.
+/// Start the server.
 pub(crate) fn run(socket: &str) -> result::Result<(), String> {
     thread::scope(move |s| {
         let (command_sender, command_receiver) = mpsc::channel::<command::Command>();
         let (result_sender, result_receiver) =
             mpsc::channel::<Result<serde_json::Value, command::ErrorReason>>();
 
-        let server_join = s.spawn(move || {
+        let server_handle = s.spawn(move || {
             let server = server::Server::new(
                 &socket,
                 handler::DefaultHandler::new(&command_sender, &result_receiver),
@@ -23,12 +23,12 @@ pub(crate) fn run(socket: &str) -> result::Result<(), String> {
             server.start().map_err(|e| e.to_string())
         });
 
-        let drawer_join =
-            s.spawn(move || player::Drawer::new(command_receiver, &result_sender).run());
+        let player_handle =
+            s.spawn(move || player::Player::new(command_receiver, &result_sender).run());
 
         let mut errors: Vec<String> = Vec::new();
 
-        let handles = vec![("server", server_join), ("player", drawer_join)];
+        let handles = vec![("server", server_handle), ("player", player_handle)];
 
         for (name, handle) in handles {
             match handle.join() {

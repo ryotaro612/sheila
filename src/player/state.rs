@@ -11,7 +11,6 @@ use super::stream::Stream;
  *
  */
 pub(crate) struct State {
-    is_running: bool,
     playing: HashMap<String, Stream>,
 }
 
@@ -21,7 +20,6 @@ pub(crate) struct State {
 impl State {
     pub(crate) fn new() -> Self {
         State {
-            is_running: true,
             playing: HashMap::new(),
         }
     }
@@ -37,21 +35,15 @@ impl State {
         match cmd {
             command::Command::Stop { .. } => {
                 wallpaper.stop();
-                self.is_running = false;
                 Ok(serde_json::Value::Null)
             }
             command::Command::Shutdown { .. } => {
-                // TODO
                 wallpaper.stop();
-                self.is_running = false;
                 Ok(serde_json::Value::Null)
             }
             command::Command::Status { .. } => Ok(serde_json::json!({})),
             // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
             command::Command::Play { file, monitor } => {
-                if self.is_running == false {
-                    return Err(make_server_error("the background service is down"));
-                }
                 let connector = match monitor {
                     Some(m) => Ok(m.to_string()),
                     None => wallpaper

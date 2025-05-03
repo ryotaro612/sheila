@@ -3,15 +3,11 @@ use crate::server::request::parse_request;
 use crate::server::response;
 use serde_json;
 use std::sync::mpsc;
-/**
- *
- */
+///
 pub(crate) trait Handler {
     fn handle(&self, request: &str) -> response::Response;
 }
-/**
- *
- */
+///
 impl<'a> Handler for DefaultHandler<'a> {
     fn handle(&self, request: &str) -> response::Response {
         match self.process(request) {
@@ -20,9 +16,7 @@ impl<'a> Handler for DefaultHandler<'a> {
         }
     }
 }
-/**
- *
- */
+
 impl<'a> DefaultHandler<'a> {
     pub(crate) fn new(
         command_sender: &'a mpsc::Sender<command::Command>,
@@ -88,7 +82,7 @@ mod tests {
 
     use super::*;
     #[test]
-    fn malformed_json_make_parse_error() {
+    fn malformed_json_makes_parse_error() {
         let (sender, _) = mpsc::channel();
         let (_, result_receiver) =
             mpsc::channel::<Result<serde_json::Value, command::ErrorReason>>();
