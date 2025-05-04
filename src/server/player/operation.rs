@@ -16,12 +16,6 @@ pub(crate) fn operate(
             Ok(serde_json::json!(true))
         }
         command::Command::Shutdown => {
-            // self.playing.iter().for_each(|(connector, stream)| {
-            //     stream.stop().unwrap();
-            //     //wallpaper.close_window_by_connector(connector);
-            // });
-
-            // self.playing.clear();
             wallpaper.shutdown();
             Ok(shutdown_result())
         }

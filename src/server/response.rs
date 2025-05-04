@@ -34,9 +34,7 @@ impl Response {
     }
 }
 
-/**
- *
- */
+///
 pub(crate) fn write_response(mut stream: &net::UnixStream, response: &Response) {
     stream
         .write_all(response.response_as_string().as_bytes())

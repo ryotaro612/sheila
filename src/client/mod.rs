@@ -51,7 +51,7 @@ mod tests {
         let res = helper(
             parser::ClientSubCommands::Shutdown,
             command::Command::Shutdown,
-            serde_json::json!(true),
+            serde_json::json!("Server is terminating"),
         );
         res.unwrap();
     }

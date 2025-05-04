@@ -1,6 +1,6 @@
 use std::result;
 mod handler;
-mod player;
+pub(crate) mod player;
 pub(crate) mod request;
 mod response;
 mod server;
