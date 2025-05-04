@@ -1,6 +1,7 @@
 use super::stream;
 use std::collections::HashMap;
 ///
+///
 pub(crate) struct State {
     app_running: bool,
     playing: HashMap<String, stream::Stream>,
@@ -19,8 +20,9 @@ impl State {
         self.app_running = running;
     }
 
-    pub(crate) fn add_stream(&mut self, connector: &str, stream: &stream::Stream) {
-        self.playing.insert(connector.to_string(), stream.clone());
+    /// TODO check exist or not
+    pub(crate) fn add_stream(&mut self, connector: &str, stream: stream::Stream) {
+        self.playing.insert(connector.to_string(), stream);
     }
 
     pub(crate) fn stop_stream(&mut self, connector: &str) {

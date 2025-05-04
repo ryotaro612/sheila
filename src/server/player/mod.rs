@@ -5,6 +5,7 @@ mod state;
 mod stream;
 mod wallpaper;
 mod window;
+use glib::clone::Downgrade;
 use gtk4::glib;
 pub(crate) mod operation;
 mod receiver;
@@ -42,7 +43,7 @@ impl<'a> Player<'a> {
                 loop {
                     match receiver::ReceivedFuture::new(arc_receiver.clone()).await {
                         Ok(cmd) => {
-                            let result = operation::operate(&state, &app, &cmd);
+                            let result = operation::operate(&state.downgrade(), &app, &cmd);
                             let response = sender.send(result);
                             if response.is_err() {
                                 app.shutdown();

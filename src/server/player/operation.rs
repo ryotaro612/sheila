@@ -2,11 +2,10 @@ use super::state;
 use super::wallpaper;
 use crate::command::{self, make_server_error};
 use std::result;
-use std::sync::{Arc, Mutex};
-
+use std::sync::{Mutex, Weak};
 ///
 pub(crate) fn operate(
-    state: &Arc<Mutex<state::State>>,
+    state: &Weak<Mutex<state::State>>,
     wallpaper: &impl wallpaper::Wallpaper,
     cmd: &command::Command,
 ) -> result::Result<serde_json::Value, command::ErrorReason> {

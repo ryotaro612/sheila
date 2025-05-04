@@ -2,7 +2,7 @@ use gstreamer;
 use gtk4::{glib, Application, Window};
 use gtk4::{prelude::*, Picture};
 use gtk4_layer_shell::LayerShell;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 
 use crate::command::{self, make_server_error};
 
@@ -25,7 +25,7 @@ pub(crate) trait Wallpaper {
     ///
     fn play(
         &self,
-        state: &Arc<Mutex<state::State>>,
+        state: &Weak<Mutex<state::State>>,
         connector: &str,
         file: &str,
     ) -> Result<(), command::ErrorReason>;
@@ -56,6 +56,7 @@ impl Wallpaper for gtk4::Application {
         }
         self.quit();
     }
+
     fn default_connector(&self) -> Result<String, String> {
         let monitor = detect_gdk_monitor(&None)?;
         monitor
@@ -95,7 +96,7 @@ impl Wallpaper for gtk4::Application {
 
     fn play(
         &self,
-        state: &Arc<Mutex<state::State>>,
+        state: &Weak<Mutex<state::State>>,
         connector: &str,
         file: &str,
     ) -> Result<(), command::ErrorReason> {
@@ -110,23 +111,54 @@ impl Wallpaper for gtk4::Application {
             make_server_error(e.as_str())
         })?;
 
-        let stream =
-            Stream::new(file, width, height).map_err(|e| command::ErrorReason::ServerError {
-                reason: e.to_string(),
-            })?;
+        let on_error = glib::clone!(
+            #[weak]
+            window,
+            move || {
+                window.close();
+            }
+        );
 
-        state.lock().unwrap().add_stream(connector, &stream);
-        let state1 = Arc::clone(&state);
+        let stream = Stream::new(file, width, height, on_error).map_err(|e| {
+            window.close();
+            command::ErrorReason::ServerError {
+                reason: e.to_string(),
+            }
+        })?;
+        let picture = Picture::for_paintable(&stream.paintable());
+        window.set_child(Some(&picture));
+
+        let monitor_connector = connector.to_string();
+        gdk_monitor.connect_invalidate(glib::clone!(
+            #[weak]
+            window,
+            move |_: &gdk4::Monitor| {
+                log::debug!("Monitor {monitor_connector} was invalidated");
+                window.close();
+            }
+        ));
+        let state1 = Weak::clone(&state);
         let connector1 = connector.to_string();
         window.connect_close_request(move |_| {
-            let mut state = state1.lock().unwrap();
-            state.stop_stream(&connector1);
-
+            if let Some(s) = state1.upgrade() {
+                let mut state = s.lock().unwrap();
+                state.stop_stream(&connector1);
+            }
             glib::Propagation::Proceed
         });
 
-        let picture = Picture::for_paintable(&stream.paintable());
-        window.set_child(Some(&picture));
+        state.upgrade().map(|s| {
+            let mut state = s.lock().unwrap();
+            state.add_stream(connector, stream.clone());
+        });
+
+        stream.play().map_err(|e| {
+            window.close();
+            command::ErrorReason::ServerError {
+                reason: e.to_string(),
+            }
+        })?;
+
         window.present();
         Ok(())
     }

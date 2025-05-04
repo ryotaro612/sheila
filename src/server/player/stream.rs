@@ -1,16 +1,16 @@
-use gdk4::Paintable;
-use gstreamer::bus;
-use gstreamer::prelude::{ElementExt, GstBinExtManual};
-use gstreamer::Element;
-use gtk4::prelude::*;
 use std::rc;
+
+use gdk4::Paintable;
+use gstreamer::prelude::ElementExt;
+use gstreamer::{bus, Element};
+use gtk4::prelude::*;
 /**
 
 */
 #[derive(Debug, Clone)]
 pub(crate) struct Stream {
     element: gstreamer::Element,
-    //bus_watch_guard: rc::Rc<bus::BusWatchGuard>,
+    bus_watch_guard: rc::Rc<bus::BusWatchGuard>,
 }
 
 impl Stream {
@@ -21,15 +21,23 @@ impl Stream {
     }
 
     pub(crate) fn paintable(&self) -> Paintable {
-        let paintable = self
-            .element
+        self.element
             .property::<Element>("video-sink")
-            .property::<gdk4::Paintable>("paintable");
-        paintable
+            .property::<gdk4::Paintable>("paintable")
     }
 
+    pub(crate) fn play(
+        &self,
+    ) -> Result<gstreamer::StateChangeSuccess, gstreamer::StateChangeError> {
+        self.element.set_state(gstreamer::State::Playing)
+    }
     ///  gst-launch-1.0 -v playbin uri=file:///home/youruser/file.mp4 video-filter="aspectratiocrop aspect-ratio=16/9" video-sink=gtk4paintablesink
-    pub(crate) fn new(file: &str, width: i32, height: i32) -> Result<Stream, String> {
+    pub(crate) fn new(
+        file: &str,
+        width: i32,
+        height: i32,
+        on_error: impl Fn() -> () + 'static,
+    ) -> Result<Stream, String> {
         let neg: i64 = -1;
         let sink = gstreamer::ElementFactory::make("gtk4paintablesink")
             .property("max-lateness", neg)
@@ -48,23 +56,21 @@ impl Stream {
             .build()
             .map_err(|e| e.to_string())?;
 
-        playbin
-            .set_state(gstreamer::State::Playing)
-            .map_err(|e| format!("failed to set state: {e}"))?;
-
         let element_ref = playbin.downgrade();
 
         let bus_watch_guard = playbin
             .bus()
             .unwrap()
             .add_watch_local(move |_bus, msg| {
-                log::debug!("message: {:?}", msg.view());
                 match msg.view() {
                     gstreamer::MessageView::Eos(..) => {
                         if let Some(a) = element_ref.upgrade() {
                             a.set_state(gstreamer::State::Null).unwrap();
                             a.set_state(gstreamer::State::Playing).unwrap();
                         }
+                    }
+                    gstreamer::MessageView::Error(..) => {
+                        on_error();
                     }
                     _ => (),
                 }
@@ -74,7 +80,7 @@ impl Stream {
 
         Ok(Stream {
             element: playbin,
-            //bus_watch_guard: rc::Rc::new(bus_watch_guard),
+            bus_watch_guard: rc::Rc::new(bus_watch_guard),
         })
     }
 }
