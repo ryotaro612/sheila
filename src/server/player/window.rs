@@ -1,19 +1,18 @@
 use gdk4::prelude::MonitorExt;
 use gtk4::{Application, Window};
-use gtk4_layer_shell::LayerShell;
+use gtk4_layer_shell::{Edge, LayerShell};
 
 /// Initializes a GTK window and attaches it to the specified monitor (connector).
 /// Returns an error if the monitor cannot be detected or the window cannot be created.
 pub(crate) fn init_window(app: &Application, monitor: &gdk4::Monitor) -> Result<Window, String> {
     let window = Window::builder().application(app).build();
+    // GTK4 warns: "Make sure you called gtk_layer_init_for_window()" before the method invocation.
     window.init_layer_shell();
     window.set_layer(gtk4_layer_shell::Layer::Bottom);
-
     window.set_monitor(Some(monitor));
-    window.set_anchor(gtk4_layer_shell::Edge::Left, true);
-    window.set_anchor(gtk4_layer_shell::Edge::Right, true);
-    window.set_anchor(gtk4_layer_shell::Edge::Top, true);
-    window.set_anchor(gtk4_layer_shell::Edge::Bottom, true);
+    for edge in [Edge::Left, Edge::Right, Edge::Top, Edge::Bottom] {
+        window.set_anchor(edge, true);
+    }
     Ok(window)
 }
 

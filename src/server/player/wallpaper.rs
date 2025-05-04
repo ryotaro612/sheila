@@ -50,10 +50,11 @@ impl Wallpaper for gtk4::Application {
         self.windows().iter().for_each(|w| {
             w.close();
         });
-        self.quit();
+        // An active gstreamer element can prevent the application from quitting.
         unsafe {
             gstreamer::deinit();
         }
+        self.quit();
     }
     fn default_connector(&self) -> Result<String, String> {
         let monitor = detect_gdk_monitor(&None)?;

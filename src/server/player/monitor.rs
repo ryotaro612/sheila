@@ -1,6 +1,4 @@
-/**
- *
- */
+///
 use gdk4;
 use gdk4::prelude::DisplayExt;
 use gdk4::prelude::MonitorExt;
@@ -23,16 +21,7 @@ pub(crate) fn detect_gdk_monitor(connector: &Option<String>) -> Result<gdk4::Mon
     }
 }
 
-pub(crate) fn connector_name(monitor: &gdk4::Monitor) -> Result<String, String> {
-    monitor
-        .connector()
-        .map(|g| g.to_string())
-        .ok_or("failed to resolve the connector name".to_string())
-}
-
-/**
- *
- */
+///
 fn detect_gdk_monitors() -> Result<Vec<gdk4::Monitor>, String> {
     let display = detect_display()?;
     let monitors_list_model = display.monitors();
@@ -42,7 +31,7 @@ fn detect_gdk_monitors() -> Result<Vec<gdk4::Monitor>, String> {
             let object: Object = res.map_err(|e| e.to_string())?;
             let monitor = object
                 .downcast::<gdk4::Monitor>()
-                .map_err(|_| "failed to downcast n glib Object to an gdk4::Monitor".to_string())?;
+                .map_err(|_| "failed to downcast glib Object to Monitor".to_string())?;
             Ok(monitor)
         })
         .filter_map(|f: Result<gdk4::Monitor, String>| f.ok())
@@ -50,9 +39,7 @@ fn detect_gdk_monitors() -> Result<Vec<gdk4::Monitor>, String> {
     Ok(monitors)
 }
 
-/**
- *
- */
+///
 fn detect_display() -> Result<gdk4::Display, String> {
     //  gdk4::Display::open(None).unwrap(); or wayland-1 WAYLAND_DISPLAY env
     gdk4::Display::default().ok_or(String::from("failed to detect a display"))
