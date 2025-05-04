@@ -1,4 +1,5 @@
 use gdk4::Paintable;
+use glib::property::PropertyGet;
 use gstreamer::bus;
 use gstreamer::prelude::{ElementExt, GstBinExtManual};
 use gtk4::prelude::*;
@@ -43,7 +44,7 @@ impl Stream {
 
         let playbin = gstreamer::ElementFactory::make("playbin")
             .property("uri", format!("file://{}", file))
-            .property("video-filter", crop)
+            //.property("video-filter", crop)
             .property("video-sink", &sink)
             .build()
             .map_err(|e| e.to_string())?;
@@ -61,12 +62,9 @@ impl Stream {
             .unwrap()
             .add_watch_local(move |_bus, msg| {
                 log::debug!("message: {:?}", msg.view());
-                log::debug!("c: {:?}", element_ref.upgrade());
                 match msg.view() {
                     gstreamer::MessageView::Eos(..) => {
-                        log::debug!("begin eos:###");
                         if let Some(a) = element_ref.upgrade() {
-                            log::debug!("eos:###");
                             a.set_state(gstreamer::State::Null).unwrap();
                             a.set_state(gstreamer::State::Playing).unwrap();
                         }
