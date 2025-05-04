@@ -41,15 +41,9 @@ impl Stream {
             .build()
             .map_err(|e| e.to_string())?;
 
-        let filter_bin = gstreamer::Bin::new();
-        filter_bin.add_many([&crop]).unwrap();
-        let pad = crop.static_pad("sink").unwrap();
-        let ghost_pad = gstreamer::GhostPad::with_target(&pad).unwrap();
-        filter_bin.add_pad(&ghost_pad).unwrap();
-
         let playbin = gstreamer::ElementFactory::make("playbin")
             .property("uri", format!("file://{}", file))
-            //.property("video-filter", filter_bin)
+            .property("video-filter", crop)
             .property("video-sink", &sink)
             .build()
             .map_err(|e| e.to_string())?;
