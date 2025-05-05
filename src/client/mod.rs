@@ -14,7 +14,7 @@ pub(crate) fn run(
     let cli: client::SocketClient = crate::client::client::SocketClient::new(&socket);
     let id = generate_id();
     let res = match args {
-        parser::ClientSubCommands::Play(a) => play::play(&cli, &id, a),
+        parser::ClientSubCommands::Play(play_args) => play::play(&cli, &id, play_args),
         parser::ClientSubCommands::Stop(args) => stop::stop(&cli, id.as_str(), &args),
         parser::ClientSubCommands::Status => status::status(&cli, id.as_str()),
         parser::ClientSubCommands::Shutdown => shutdown::shutdown(&cli, id.as_str()),
@@ -85,11 +85,11 @@ mod tests {
             .to_string();
         let res = helper(
             parser::ClientSubCommands::Play(PlayArgs {
-                file: "Cargo.toml".to_string(),
+                files: vec!["Cargo.toml".to_string()],
                 monitor: None,
             }),
             command::Command::Play {
-                file: canonical,
+                files: vec![canonical],
                 monitor: None,
             },
             serde_json::json!(true),
@@ -106,11 +106,11 @@ mod tests {
             .to_string();
         let res = helper(
             parser::ClientSubCommands::Play(PlayArgs {
-                file: "Cargo.toml".to_string(),
+                files: vec!["Cargo.toml".to_string()],
                 monitor: Some("eDP-1".to_string()),
             }),
             command::Command::Play {
-                file: canonical,
+                files: vec![canonical],
                 monitor: Some("eDP-1".to_string()),
             },
             serde_json::json!(true),

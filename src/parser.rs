@@ -3,9 +3,7 @@ use std::ffi::OsString;
 
 use clap::{Args, Parser, Subcommand};
 
-/**
- Parses the command line arguments.
-*/
+/// Parses the command line arguments.
 #[derive(Debug, Parser)]
 #[command(name = "sheila")]
 pub(crate) struct Cli {
@@ -13,26 +11,20 @@ pub(crate) struct Cli {
     pub(crate) command: Commands,
 
     // https://stackoverflow.com/questions/76341332/clap-default-value-for-pathbuf
-    /*
-    Default path for the socket file.
-     */
+    /// Default path for the socket file.
     #[arg(short, long, default_value = get_default_log_path())]
     pub(crate) socket: String,
     // https://poyo.hatenablog.jp/entry/2022/10/10/170000
-    /*
-    Enables verbose output.
-     */
+    /// Enables verbose output.
     #[arg(short, long)]
     pub(crate) verbose: bool,
 }
 
-/**
- * Parses command line arguments.
- */
+/// Parses command line arguments.
 pub(crate) fn parse(args: Vec<String>) -> Result<Cli, clap::Error> {
     Cli::try_parse_from(args)
 }
-
+///
 #[derive(Debug, Subcommand)]
 pub(crate) enum Commands {
     #[command(about = "Runs the server")]
@@ -40,7 +32,7 @@ pub(crate) enum Commands {
     #[command(about = "Runs the client")]
     Client(ClientArgs),
 }
-
+///
 #[derive(Debug, Args)]
 pub(crate) struct ClientArgs {
     #[command(subcommand)]
@@ -56,35 +48,26 @@ pub(crate) enum ClientSubCommands {
     Shutdown,
 }
 
-/**
-
-*/
+///
 #[derive(Debug, Args)]
 pub(crate) struct PlayArgs {
-    /**
-     A path to an MP4 file.
-    */
-    #[arg()]
-    pub(crate) file: String,
+    /// A path to an MP4 file.
+    #[arg(num_args = 1.., required=true)]
+    pub(crate) files: Vec<String>,
 
-    /**
-    The name of a monitor to play a movie.
-    */
+    /// The name of a monitor to play a movie.
     #[arg(long)]
     pub(crate) monitor: Option<String>,
 }
 
 #[derive(Debug, Args)]
 pub(crate) struct StopArgs {
-    /*
-     */
+    ///
     #[arg(long)]
     pub(crate) monitor: Option<String>,
 }
 
-/**
-Returns the default path of the socket file.
-*/
+/// Returns the default path of the socket file.
 fn get_default_log_path() -> OsString {
     let mut p = std::env::temp_dir();
     p.push("sheila.socket");
@@ -114,6 +97,34 @@ mod tests {
     }
 
     #[test]
+    fn play_requires_files() {
+        let args = arrange(vec!["sheila", "--verbose", "client", "play"]);
+        let actual = parse(args);
+        assert!(actual.is_err());
+    }
+
+    #[test]
+    fn play_accept_more_than_one_files() {
+        let args = arrange(vec!["sheila", "--verbose", "client", "play", "a", "b"]);
+
+        // actual
+        let actual = parse(args).unwrap();
+
+        match actual.command {
+            Commands::Client(client_args) => match client_args.command {
+                ClientSubCommands::Play(args) => {
+                    assert_eq!(None, args.monitor);
+                    assert_eq!(vec!["a", "b"], args.files);
+                }
+                _ => panic!("unexpected subcommand"),
+            },
+            _ => panic!("unexpected command"),
+        }
+
+        assert!(actual.verbose);
+    }
+
+    #[test]
     fn test_server_subcommand_accepts_verbose_option() {
         // arrange
         let args: Vec<String> = vec!["sheila", "--verbose", "server"]
@@ -138,30 +149,6 @@ mod tests {
         // actual
         let actual = parse(args).unwrap();
         // assert
-        assert!(actual.verbose);
-    }
-
-    #[test]
-    fn test_client_has_display_subcommand() {
-        let args: Vec<String> = vec!["sheila", "--verbose", "client", "play", "movie.mp4"]
-            .into_iter()
-            .map(String::from)
-            .collect();
-
-        // actual
-        let actual = parse(args).unwrap();
-
-        match actual.command {
-            Commands::Client(client_args) => match client_args.command {
-                ClientSubCommands::Play(args) => {
-                    assert_eq!(None, args.monitor);
-                    assert_eq!("movie.mp4", args.file);
-                }
-                _ => panic!("unexpected subcommand"),
-            },
-            _ => panic!("unexpected command"),
-        }
-
         assert!(actual.verbose);
     }
 
@@ -238,6 +225,7 @@ mod tests {
             panic!("unexpected command");
         }
     }
+    /// Make Vec<&str> to Vec<String>
     fn arrange(v: Vec<&str>) -> Vec<String> {
         v.into_iter().map(|s| s.to_string()).collect()
     }

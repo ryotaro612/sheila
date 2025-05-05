@@ -82,18 +82,28 @@ trait PlayCommandDecoder {
 impl PlayCommandDecoder for JsonRpcRequest {
     fn as_play_cmd(&self) -> Result<command::Command, String> {
         let params = self.params.as_ref().ok_or("params is required")?;
-        let file = params
-            .get("file")
-            .ok_or("file is required.")?
-            .as_str()
-            .ok_or("file is not a string")?;
+        let files_ary = params
+            .get("files")
+            .ok_or("files is required.")?
+            .as_array()
+            .ok_or("files is not an array")?;
+
+        let mut files: Vec<String> = vec![];
+        for file in files_ary {
+            let filepath = file.as_str().ok_or(format!("{} is not a string.", file))?;
+            files.push(filepath.to_string());
+        }
+        if files.is_empty() {
+            return Err("files is empty.".to_string());
+        }
+
         match params.get("monitor") {
             Some(serde_json::Value::String(s)) => Ok(command::Command::Play {
-                file: file.to_string(),
+                files,
                 monitor: Some(s.to_string()),
             }),
             _ => Ok(command::Command::Play {
-                file: file.to_string(),
+                files,
                 monitor: None,
             }),
         }
@@ -110,6 +120,27 @@ mod tests {
             r#"{"jsonrpc":"2.0","method":"status","id":"id"}"#,
         );
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn play_requires_at_least_one_file() {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "play",
+            "params": {
+                "files": [],
+                "monitor": Option::<String>::None,
+            },
+            "id": "id".to_string(),
+        });
+        let actual = parse_request(&request.to_string()).unwrap_err();
+
+        if let response::Response::InvalidParams { id, error } = actual {
+            assert_eq!("id", id);
+            assert_eq!("files is empty.".to_string(), error);
+        } else {
+            panic!("unexpected response: {:?}", actual);
+        }
     }
 
     #[test]

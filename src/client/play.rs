@@ -4,27 +4,29 @@ use crate::client::client;
 use crate::parser;
 use serde_json::json;
 
-/**
- * Returns Ok("") if the client have received a success result.
- */
+/// Returns Ok("") if the client have received a success result.
 pub(crate) fn play(
     cli: &impl client::Client,
     id: &str,
     args: parser::PlayArgs,
 ) -> Result<String, String> {
-    let p = Path::new(&args.file)
-        .canonicalize()
-        .map_err(|e| e.to_string())?
-        .to_str()
-        .ok_or("failed to make the file path canonical")?
-        .to_string();
+    let mut files: Vec<String> = vec![];
+
+    for file in args.files {
+        let path_buf = Path::new(&file).canonicalize().map_err(|e| e.to_string())?;
+        let path_str = path_buf.to_str().ok_or(format!(
+            "failed to make path_buf to str. path_buf: {:?}",
+            path_buf
+        ))?;
+        files.push(path_str.to_string());
+    }
 
     let result = cli
         .send(
             id,
             "play",
-            json!(
-                {"file": p,
+            json!({
+                "files": files,
                 "monitor": args.monitor
             }),
         )
@@ -51,12 +53,13 @@ mod display_tests {
     fn returns_error_on_server_error() {
         let id = "abc";
         let args = parser::PlayArgs {
-            file: "/movie.mp4".to_string(),
+            files: vec!["/movie.mp4".to_string()],
             monitor: None,
         };
         let mut cli = client::MockClient::new();
         let params = serde_json::json!({
-            "file": args.file,
+            "files": args.files,
+            "monitor":serde_json::Value::Null
         });
 
         cli.expect_send()

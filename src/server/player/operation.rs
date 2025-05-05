@@ -21,7 +21,7 @@ pub(crate) fn operate(
         }
         command::Command::Status { .. } => Ok(serde_json::json!(true)),
         // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
-        command::Command::Play { file, monitor } => {
+        command::Command::Play { files, monitor } => {
             let connector = match monitor {
                 Some(m) => Ok(m.to_string()),
                 None => wallpaper
@@ -30,7 +30,7 @@ pub(crate) fn operate(
             }?;
             wallpaper.close_window_by_connector(&connector);
 
-            wallpaper.play(state, &connector, file)?;
+            wallpaper.play(state, &connector, files.get(0).unwrap())?;
 
             Ok(serde_json::json!(true))
         }

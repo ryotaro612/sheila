@@ -7,7 +7,7 @@ pub(crate) enum Command {
     Status,
     Shutdown,
     Play {
-        file: String,
+        files: Vec<String>,
         monitor: Option<String>,
     },
 }
