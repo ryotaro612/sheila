@@ -8,7 +8,7 @@ use gtk4::prelude::*;
 #[derive(Debug)]
 pub(crate) struct Stream {
     element: gstreamer::Element,
-    bus_watch_guard: bus::BusWatchGuard,
+    _bus_watch_guard: bus::BusWatchGuard,
 }
 
 impl Stream {
@@ -65,23 +65,34 @@ impl Stream {
             .add_watch_local(move |_bus, msg| {
                 match msg.view() {
                     gstreamer::MessageView::Eos(..) => {
-                        if let Some(a) = element_ref.upgrade() {
-                            a.set_state(gstreamer::State::Null).unwrap();
-                            a.set_state(gstreamer::State::Playing).unwrap();
+                        if let Some(elm) = element_ref.upgrade() {
+                            match elm.set_state(gstreamer::State::Null) {
+                                Ok(_) => {
+                                    if let Err(e) = elm.set_state(gstreamer::State::Playing) {
+                                        log::error!("Failed to set state to Playing: {}", e);
+                                        on_error();
+                                    }
+                                }
+                                Err(e) => {
+                                    log::error!("Failed to set state to Null: {}", e);
+                                    on_error();
+                                }
+                            }
+                        } else {
+                            log::error!("the element was deleted.");
+                            on_error()
                         }
                     }
-                    gstreamer::MessageView::Error(..) => {
-                        on_error();
-                    }
+                    gstreamer::MessageView::Error(..) => on_error(),
                     _ => (),
-                }
+                };
                 glib::ControlFlow::Continue
             })
             .unwrap();
 
         Ok(Stream {
             element: playbin,
-            bus_watch_guard,
+            _bus_watch_guard: bus_watch_guard,
         })
     }
 }

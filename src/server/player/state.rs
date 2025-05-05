@@ -54,7 +54,9 @@ impl State {
 
     pub(crate) fn stop_stream(&mut self, connector: &str) {
         self.playing.get(connector).map(|s| {
-            s.stop();
+            if let Err(e) = s.stop() {
+                log::error!("Error stopping stream: {}", e);
+            }
         });
 
         self.playing.remove(connector);
