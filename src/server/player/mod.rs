@@ -63,7 +63,7 @@ impl<'a> Player<'a> {
         match app.start() {
             glib::ExitCode::SUCCESS => Ok(()),
             code => Err(format!(
-                "the wallpaper exits with unexpected status code: {}",
+                "Player exits with unexpected status code: {}",
                 code.value()
             )),
         }

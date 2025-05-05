@@ -22,10 +22,17 @@ impl State {
         self.app_running = running;
     }
 
-    pub(crate) fn play_stream(&mut self, connector: &str) {
-        self.playing.get(connector).map(|s| s.play())
+    pub(crate) fn play_stream(&mut self, connector: &str) -> Result<(), String> {
+        let stream = self
+            .playing
+            .get(connector)
+            .ok_or(format!("Stream was not found at {}", connector))?;
+
+        stream.play().map_err(|e| e.to_string())?;
+        Ok(())
     }
 
+    /// Returns Err if another movie is playing at connector.
     pub(crate) fn add_stream(
         &mut self,
         connector: &str,

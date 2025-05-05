@@ -1,5 +1,3 @@
-use std::rc;
-
 use gdk4::Paintable;
 use gstreamer::prelude::ElementExt;
 use gstreamer::{bus, Element};

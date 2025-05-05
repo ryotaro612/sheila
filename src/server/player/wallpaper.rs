@@ -1,11 +1,10 @@
-use gdk4::Paintable;
 use gstreamer;
+use gtk4::prelude::*;
 use gtk4::{glib, Application, Window};
-use gtk4::{prelude::*, Picture};
 use gtk4_layer_shell::LayerShell;
 use std::sync::{Arc, Mutex, Weak};
 
-use crate::command::{self, make_server_error};
+use crate::command::{make_invalid_params, make_server_error, ErrorReason};
 
 use super::monitor::detect_gdk_monitor;
 use super::state;
@@ -18,8 +17,6 @@ pub(crate) trait Wallpaper {
     ///
     fn start(&self) -> glib::ExitCode;
 
-    ///
-    fn stop(&self);
     /// Terminate the application.
     fn shutdown(&self);
     ///
@@ -28,7 +25,7 @@ pub(crate) trait Wallpaper {
         state: &Weak<Mutex<state::State>>,
         connector: &str,
         file: &str,
-    ) -> Result<(), command::ErrorReason>;
+    ) -> Result<(), ErrorReason>;
     ///
     fn default_connector(&self) -> Result<String, String>;
     ///
@@ -92,23 +89,21 @@ impl Wallpaper for gtk4::Application {
         self.run_with_args(args)
     }
 
-    fn stop(&self) {}
-
     fn play(
         &self,
         state: &Weak<Mutex<state::State>>,
         connector: &str,
         file: &str,
-    ) -> Result<(), command::ErrorReason> {
+    ) -> Result<(), ErrorReason> {
         let gdk_monitor = detect_gdk_monitor(&Some(connector.to_string()))
-            .map_err(|e| make_server_error(e.as_str()))?;
+            .map_err(|e| make_invalid_params(&e))?;
 
         let window: gtk4::Window =
-            init_window(self, &gdk_monitor).map_err(|e| make_server_error(e.as_str()))?;
+            init_window(self, &gdk_monitor).map_err(|e| make_server_error(&e))?;
 
         let (width, height) = get_rectangle(&window).map_err(|e| {
             window.close();
-            make_server_error(e.as_str())
+            make_server_error(&e)
         })?;
 
         let on_error = glib::clone!(
@@ -119,16 +114,9 @@ impl Wallpaper for gtk4::Application {
             }
         );
 
-        // let stream = Stream::new(file, width, height, on_error).map_err(|e| {
-        //     window.close();
-        //     command::ErrorReason::ServerError {
-        //         reason: e.to_string(),
-        //     }
-        // })?;
-        // let picture = Picture::for_paintable(&stream.paintable());
         let arc_state = state
             .upgrade()
-            .ok_or(make_server_error("The state was deleted."))?;
+            .ok_or(make_server_error(&"The state was deleted."))?;
         let mut guard_state = arc_state.lock().unwrap();
         let picture = guard_state
             .add_stream(connector, file, width, height, on_error)
@@ -140,7 +128,7 @@ impl Wallpaper for gtk4::Application {
             #[weak]
             window,
             move |_: &gdk4::Monitor| {
-                log::debug!("Monitor {monitor_connector} was invalidated");
+                log::debug!("Monitor {monitor_connector} got invalidated");
                 window.close();
             }
         ));
@@ -154,17 +142,13 @@ impl Wallpaper for gtk4::Application {
             glib::Propagation::Proceed
         });
 
-        // state.upgrade().map(|s| {
-        //     let mut state = s.lock().unwrap();
-        //     state.add_stream(connector, stream.clone());
-        // });
-
-        // stream.play().map_err(|e| {
-        //     window.close();
-        //     command::ErrorReason::ServerError {
-        //         reason: e.to_string(),
-        //     }
-        // })?;
+        guard_state
+            .play_stream(connector)
+            .map_err(|e| {
+                window.close();
+                e
+            })
+            .map_err(|e| make_server_error(&e))?;
 
         window.present();
         Ok(())

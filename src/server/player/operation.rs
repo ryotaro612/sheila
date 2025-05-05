@@ -11,7 +11,8 @@ pub(crate) fn operate(
 ) -> result::Result<serde_json::Value, command::ErrorReason> {
     match cmd {
         command::Command::Stop { monitor } => {
-            wallpaper.stop();
+            let monitor = determine_monitor(monitor, wallpaper)?;
+            wallpaper.close_window_by_connector(&monitor);
             Ok(serde_json::json!(true))
         }
         command::Command::Shutdown => {
@@ -39,4 +40,16 @@ pub(crate) fn operate(
 ///
 pub(crate) fn shutdown_result() -> serde_json::Value {
     return serde_json::json!("Server is terminating");
+}
+///
+fn determine_monitor(
+    monitor: &Option<String>,
+    wallpaper: &impl wallpaper::Wallpaper,
+) -> Result<String, command::ErrorReason> {
+    match monitor {
+        Some(m) => Ok(m.to_string()),
+        None => wallpaper
+            .default_connector()
+            .map_err(|e| make_server_error(&e)),
+    }
 }
