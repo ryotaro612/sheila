@@ -7,10 +7,10 @@ use gtk4::prelude::*;
 /**
 
 */
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct Stream {
     element: gstreamer::Element,
-    bus_watch_guard: rc::Rc<bus::BusWatchGuard>,
+    bus_watch_guard: bus::BusWatchGuard,
 }
 
 impl Stream {
@@ -34,8 +34,8 @@ impl Stream {
     ///  gst-launch-1.0 -v playbin uri=file:///home/youruser/file.mp4 video-filter="aspectratiocrop aspect-ratio=16/9" video-sink=gtk4paintablesink
     pub(crate) fn new(
         file: &str,
-        width: i32,
-        height: i32,
+        width: u32,
+        height: u32,
         on_error: impl Fn() -> () + 'static,
     ) -> Result<Stream, String> {
         let neg: i64 = -1;
@@ -45,7 +45,10 @@ impl Stream {
             .map_err(|e| e.to_string())?;
 
         let crop = gstreamer::ElementFactory::make("aspectratiocrop")
-            .property("aspect-ratio", gstreamer::Fraction::new(width, height))
+            .property(
+                "aspect-ratio",
+                gstreamer::Fraction::new(width as i32, height as i32),
+            )
             .build()
             .map_err(|e| e.to_string())?;
 
@@ -80,7 +83,7 @@ impl Stream {
 
         Ok(Stream {
             element: playbin,
-            bus_watch_guard: rc::Rc::new(bus_watch_guard),
+            bus_watch_guard,
         })
     }
 }

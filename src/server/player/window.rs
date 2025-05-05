@@ -18,7 +18,7 @@ pub(crate) fn init_window(app: &Application, monitor: &gdk4::Monitor) -> Result<
 
 /// Returns the width and height of the monitor where the window is displayed.
 /// Returns an error if the monitor cannot be determined.
-pub(crate) fn get_rectangle(window: &Window) -> Result<(i32, i32), String> {
+pub(crate) fn get_rectangle(window: &Window) -> Result<(u32, u32), String> {
     let rec = window.monitor()
         .map(|m| m.geometry())
         .ok_or_else(|| format!(
@@ -26,5 +26,5 @@ pub(crate) fn get_rectangle(window: &Window) -> Result<(i32, i32), String> {
             window
         ))?;
 
-    Ok((rec.width(), rec.height()))
+    Ok((rec.width() as u32, rec.height() as u32))
 }

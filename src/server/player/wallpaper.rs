@@ -1,3 +1,4 @@
+use gdk4::Paintable;
 use gstreamer;
 use gtk4::{glib, Application, Window};
 use gtk4::{prelude::*, Picture};
@@ -8,7 +9,6 @@ use crate::command::{self, make_server_error};
 
 use super::monitor::detect_gdk_monitor;
 use super::state;
-use super::stream::Stream;
 use super::window::{get_rectangle, init_window};
 
 pub(crate) trait Wallpaper {
@@ -119,13 +119,20 @@ impl Wallpaper for gtk4::Application {
             }
         );
 
-        let stream = Stream::new(file, width, height, on_error).map_err(|e| {
-            window.close();
-            command::ErrorReason::ServerError {
-                reason: e.to_string(),
-            }
-        })?;
-        let picture = Picture::for_paintable(&stream.paintable());
+        // let stream = Stream::new(file, width, height, on_error).map_err(|e| {
+        //     window.close();
+        //     command::ErrorReason::ServerError {
+        //         reason: e.to_string(),
+        //     }
+        // })?;
+        // let picture = Picture::for_paintable(&stream.paintable());
+        let arc_state = state
+            .upgrade()
+            .ok_or(make_server_error("The state was deleted."))?;
+        let mut guard_state = arc_state.lock().unwrap();
+        let picture = guard_state
+            .add_stream(connector, file, width, height, on_error)
+            .map_err(|e| make_server_error(&e))?;
         window.set_child(Some(&picture));
 
         let monitor_connector = connector.to_string();
@@ -147,17 +154,17 @@ impl Wallpaper for gtk4::Application {
             glib::Propagation::Proceed
         });
 
-        state.upgrade().map(|s| {
-            let mut state = s.lock().unwrap();
-            state.add_stream(connector, stream.clone());
-        });
+        // state.upgrade().map(|s| {
+        //     let mut state = s.lock().unwrap();
+        //     state.add_stream(connector, stream.clone());
+        // });
 
-        stream.play().map_err(|e| {
-            window.close();
-            command::ErrorReason::ServerError {
-                reason: e.to_string(),
-            }
-        })?;
+        // stream.play().map_err(|e| {
+        //     window.close();
+        //     command::ErrorReason::ServerError {
+        //         reason: e.to_string(),
+        //     }
+        // })?;
 
         window.present();
         Ok(())
