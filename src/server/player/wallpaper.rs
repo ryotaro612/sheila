@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex, Weak};
 use crate::command::{make_invalid_params, make_server_error, ErrorReason};
 
 use super::monitor::detect_gdk_monitor;
+use super::playlist::Playlist;
 use super::state;
 use super::window::{get_rectangle, init_window};
 
@@ -24,7 +25,7 @@ pub(crate) trait Wallpaper {
         &self,
         state: &Weak<Mutex<state::State>>,
         connector: &str,
-        file: &str,
+        playlist: &Playlist,
     ) -> Result<(), ErrorReason>;
     ///
     fn default_connector(&self) -> Result<String, String>;
@@ -93,7 +94,7 @@ impl Wallpaper for gtk4::Application {
         &self,
         state: &Weak<Mutex<state::State>>,
         connector: &str,
-        file: &str,
+        playlist: &Playlist,
     ) -> Result<(), ErrorReason> {
         let gdk_monitor = detect_gdk_monitor(&Some(connector.to_string()))
             .map_err(|e| make_invalid_params(&e))?;
@@ -119,7 +120,7 @@ impl Wallpaper for gtk4::Application {
             .ok_or(make_server_error(&"The state was deleted."))?;
         let mut guard_state = arc_state.lock().unwrap();
         let picture = guard_state
-            .add_stream(connector, file, width, height, on_error)
+            .add_stream(connector, playlist, width, height, on_error)
             .map_err(|e| make_server_error(&e))?;
         window.set_child(Some(&picture));
 

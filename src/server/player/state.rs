@@ -1,6 +1,6 @@
 use gtk4::Picture;
 
-use super::stream;
+use super::{playlist::Playlist, stream};
 use std::collections::HashMap;
 ///
 ///
@@ -36,7 +36,7 @@ impl State {
     pub(crate) fn add_stream(
         &mut self,
         connector: &str,
-        file: &str,
+        playlist: &Playlist,
         width: u32,
         height: u32,
         on_error: impl Fn() -> () + 'static,
@@ -44,8 +44,8 @@ impl State {
         if self.playing.get(connector).is_some() {
             return Err(format!("Another playlist is on {}", connector));
         }
-        let stream =
-            stream::Stream::new(file, width, height, on_error).map_err(|e| e.to_string())?;
+        let stream = stream::Stream::new(playlist.clone(), width, height, on_error)
+            .map_err(|e| e.to_string())?;
 
         let picture = Picture::for_paintable(&stream.paintable());
         self.playing.insert(connector.to_string(), stream);

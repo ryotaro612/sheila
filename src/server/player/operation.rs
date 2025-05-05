@@ -1,3 +1,4 @@
+use super::playlist::Playlist;
 use super::state;
 use super::wallpaper;
 use crate::command::{self, make_server_error};
@@ -30,7 +31,7 @@ pub(crate) fn operate(
             }?;
             wallpaper.close_window_by_connector(&connector);
 
-            wallpaper.play(state, &connector, files.get(0).unwrap())?;
+            wallpaper.play(state, &connector, &Playlist::new(files, false))?;
 
             Ok(serde_json::json!(true))
         }

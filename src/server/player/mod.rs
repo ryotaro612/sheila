@@ -8,6 +8,7 @@ mod window;
 use glib::clone::Downgrade;
 use gtk4::glib;
 pub(crate) mod operation;
+mod playlist;
 mod receiver;
 use std::result;
 use std::sync::{self, mpsc};

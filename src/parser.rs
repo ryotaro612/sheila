@@ -58,6 +58,9 @@ pub(crate) struct PlayArgs {
     /// The name of a monitor to play a movie.
     #[arg(long)]
     pub(crate) monitor: Option<String>,
+    // ///
+    // #[arg(long)]
+    // pub(crate) random: bool,
 }
 
 #[derive(Debug, Args)]

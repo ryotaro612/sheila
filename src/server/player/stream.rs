@@ -1,7 +1,12 @@
+use std::cell::RefCell;
+use std::rc;
+
 use gdk4::Paintable;
 use gstreamer::prelude::ElementExt;
 use gstreamer::{bus, Element};
 use gtk4::prelude::*;
+
+use super::playlist::Playlist;
 /**
 
 */
@@ -31,7 +36,7 @@ impl Stream {
     }
     ///  gst-launch-1.0 -v playbin uri=file:///home/youruser/file.mp4 video-filter="aspectratiocrop aspect-ratio=16/9" video-sink=gtk4paintablesink
     pub(crate) fn new(
-        file: &str,
+        playlist: Playlist,
         width: u32,
         height: u32,
         on_error: impl Fn() -> () + 'static,
@@ -50,6 +55,12 @@ impl Stream {
             .build()
             .map_err(|e| e.to_string())?;
 
+        let playlist = rc::Rc::new(RefCell::new(playlist));
+        let file = playlist
+            .borrow_mut()
+            .next()
+            .ok_or("No file in the playlist")?;
+
         let playbin = gstreamer::ElementFactory::make("playbin")
             .property("uri", format!("file://{}", file))
             .property("video-filter", crop)
@@ -57,20 +68,22 @@ impl Stream {
             .build()
             .map_err(|e| e.to_string())?;
 
-        let element_ref = playbin.downgrade();
-
+        let playbin_ref = playbin.downgrade();
         let bus_watch_guard = playbin
             .bus()
             .unwrap()
             .add_watch_local(move |_bus, msg| {
                 match msg.view() {
                     gstreamer::MessageView::Eos(..) => {
-                        if let Some(elm) = element_ref.upgrade() {
+                        if let Some(elm) = playbin_ref.upgrade() {
                             match elm.set_state(gstreamer::State::Null) {
                                 Ok(_) => {
-                                    if let Err(e) = elm.set_state(gstreamer::State::Playing) {
-                                        log::error!("Failed to set state to Playing: {}", e);
-                                        on_error();
+                                    if let Some(file) = playlist.borrow_mut().next() {
+                                        elm.set_property("uri", format!("file://{}", file));
+                                        if let Err(e) = elm.set_state(gstreamer::State::Playing) {
+                                            log::error!("Failed to set state to Playing: {}", e);
+                                            on_error();
+                                        }
                                     }
                                 }
                                 Err(e) => {
