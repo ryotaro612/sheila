@@ -1,7 +1,3 @@
 # sheila
-
+sheila plays movies as wallpapers for Wayland session.
 ## Run
-
-```
-cargo run --bin sheilac
-```
