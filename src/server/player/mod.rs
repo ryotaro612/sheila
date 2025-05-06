@@ -36,7 +36,7 @@ impl<'a> Player<'a> {
         let arc_receiver = sync::Arc::new(sync::Mutex::new(self.command_receiver));
 
         let state = Arc::new(Mutex::new(state::State::new()));
-        let app = <gtk4::Application as wallpaper::Wallpaper>::new_application(&state)?;
+        let app = wallpaper::new_application(&state)?;
 
         glib::spawn_future_local(glib::clone!(
             #[weak]

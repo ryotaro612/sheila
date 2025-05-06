@@ -13,9 +13,6 @@ use super::window::{get_rectangle, init_window};
 
 pub(crate) trait Wallpaper {
     ///
-    fn new_application(state: &Arc<Mutex<state::State>>) -> Result<impl Wallpaper, String>;
-
-    ///
     fn count_windows(&self) -> usize;
 
     ///
@@ -69,27 +66,6 @@ impl Wallpaper for gtk4::Application {
             .connector()
             .map(|g| g.to_string())
             .ok_or("failed to resolve the connector of the default monitor".to_string())
-    }
-    ///
-    fn new_application(state: &Arc<Mutex<state::State>>) -> Result<gtk4::Application, String> {
-        let app = Application::builder()
-            .application_id("dev.ryotaro.sheila")
-            .build();
-        app.connect_activate(build_ui);
-
-        gstreamer::init().map_err(|e| {
-            app.quit();
-            e.to_string()
-        })?;
-
-        state.lock().unwrap().set_app_running(true);
-        let state1 = Arc::clone(&state);
-        app.connect_shutdown(move |_| {
-            let mut c = state1.lock().unwrap();
-            c.set_app_running(true);
-        });
-
-        Ok(app)
     }
 
     fn start(&self) -> glib::ExitCode {
@@ -162,6 +138,27 @@ impl Wallpaper for gtk4::Application {
         window.present();
         Ok(())
     }
+}
+
+pub(crate) fn new_application(state: &Arc<Mutex<state::State>>) -> Result<Application, String> {
+    let app = Application::builder()
+        .application_id("dev.ryotaro.sheila")
+        .build();
+    app.connect_activate(build_ui);
+
+    gstreamer::init().map_err(|e| {
+        app.quit();
+        e.to_string()
+    })?;
+
+    state.lock().unwrap().set_app_running(true);
+    let state1 = Arc::clone(&state);
+    app.connect_shutdown(move |_| {
+        let mut c = state1.lock().unwrap();
+        c.set_app_running(true);
+    });
+
+    Ok(app)
 }
 
 ///
