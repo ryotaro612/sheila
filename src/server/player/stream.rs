@@ -4,7 +4,7 @@ use std::rc;
 use gdk4::Paintable;
 use glib::WeakRef;
 use gstreamer::prelude::ElementExt;
-use gstreamer::{bus, Element, Message};
+use gstreamer::{Element, Message, bus};
 use gtk4::prelude::*;
 
 use super::playlist::Playlist;
@@ -113,10 +113,14 @@ fn make_playbin(width: u32, height: u32, file: &str) -> Result<Element, String> 
         .build()
         .map_err(|e| e.to_string())?;
 
+    let audio_sink = gstreamer::ElementFactory::make("fakesink")
+        .build()
+        .map_err(|e| e.to_string())?;
     gstreamer::ElementFactory::make("playbin3")
         .property("uri", format!("file://{}", file))
         .property("video-filter", crop)
-        .property("video-sink", &sink)
+        .property("audio-sink", audio_sink)
+        .property("video-sink", sink)
         .build()
         .map_err(|e| e.to_string())
 }
