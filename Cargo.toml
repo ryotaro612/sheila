@@ -1,10 +1,9 @@
 [package]
 name = "sheila"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 
 [dependencies]
 clap = { version = "4.5.31", features = ["derive", "string"] }
@@ -16,16 +15,13 @@ serde = {version = "1.0.219", features = ["derive"]}
 serde_json = {version= "1.0.140"}
 env_logger = "0.11.7"
 gtk4 = {version="0.9.6", features=["v4_16"]}
-gdk4-sys ="0.9.6"
-gdk4 ="0.9.6"
+gdk4-sys = "0.9.6"
+gdk4 = "0.9.6"
 glib = "0.20.9"
 rand = "0.9.1"
 gtk4-layer-shell = "0.5.0"
-# infer = "0.15.0"
-# dbus = "0.9.7"
 gio = "0.20.9"
 gstreamer ="0.23.5"
 gst-plugin-gtk4 = "0.13.5"
 [dev-dependencies]
 mockall = "0.13.1"
-# gstreamer-video = "0.21"
