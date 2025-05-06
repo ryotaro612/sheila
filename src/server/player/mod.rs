@@ -2,6 +2,7 @@ use crate::command::{self, Command};
 use std::sync::{Arc, Mutex};
 mod monitor;
 mod state;
+mod status;
 mod stream;
 mod wallpaper;
 mod window;

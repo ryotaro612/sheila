@@ -9,6 +9,7 @@ pub(crate) enum Command {
     Play {
         files: Vec<String>,
         monitor: Option<String>,
+        random: bool,
     },
 }
 

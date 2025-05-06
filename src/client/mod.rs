@@ -86,11 +86,13 @@ mod tests {
         let res = helper(
             parser::ClientSubCommands::Play(PlayArgs {
                 files: vec!["Cargo.toml".to_string()],
+                random: false,
                 monitor: None,
             }),
             command::Command::Play {
                 files: vec![canonical],
                 monitor: None,
+                random: false,
             },
             serde_json::json!(true),
         );
@@ -107,11 +109,13 @@ mod tests {
         let res = helper(
             parser::ClientSubCommands::Play(PlayArgs {
                 files: vec!["Cargo.toml".to_string()],
+                random: true,
                 monitor: Some("eDP-1".to_string()),
             }),
             command::Command::Play {
                 files: vec![canonical],
                 monitor: Some("eDP-1".to_string()),
+                random: true,
             },
             serde_json::json!(true),
         );

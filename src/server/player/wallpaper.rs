@@ -16,6 +16,9 @@ pub(crate) trait Wallpaper {
     fn new_application(state: &Arc<Mutex<state::State>>) -> Result<impl Wallpaper, String>;
 
     ///
+    fn count_windows(&self) -> usize;
+
+    ///
     fn start(&self) -> glib::ExitCode;
 
     /// Terminate the application.
@@ -42,6 +45,11 @@ impl Wallpaper for gtk4::Application {
                 }
             }
         });
+    }
+
+    ///
+    fn count_windows(&self) -> usize {
+        self.windows().len()
     }
 
     fn shutdown(&self) {
@@ -155,9 +163,11 @@ impl Wallpaper for gtk4::Application {
         Ok(())
     }
 }
-/**
- *
- */
+
+///
 fn build_ui(app: &Application) {
-    let _ = Window::builder().application(app).build();
+    let window = Window::builder().application(app).build();
+    // Address the warning:
+    // GtkWindow is not a layer surface. Make sure you called gtk_layer_init_for_window()
+    window.init_layer_shell();
 }

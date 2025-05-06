@@ -1,5 +1,6 @@
 use super::playlist::Playlist;
 use super::state;
+use super::status::lookup_status;
 use super::wallpaper;
 use crate::command::{self, make_server_error};
 use std::result;
@@ -20,9 +21,16 @@ pub(crate) fn operate(
             wallpaper.shutdown();
             Ok(shutdown_result())
         }
-        command::Command::Status { .. } => Ok(serde_json::json!(true)),
+        command::Command::Status { .. } => {
+            let status = lookup_status(state, wallpaper).map_err(|e| make_server_error(&e))?;
+            Ok(serde_json::json!(status))
+        }
         // https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/blob/main/video/gtk4/examples/gtksink.rs?ref_type=heads
-        command::Command::Play { files, monitor } => {
+        command::Command::Play {
+            files,
+            monitor,
+            random,
+        } => {
             let connector = match monitor {
                 Some(m) => Ok(m.to_string()),
                 None => wallpaper
@@ -31,7 +39,7 @@ pub(crate) fn operate(
             }?;
             wallpaper.close_window_by_connector(&connector);
 
-            wallpaper.play(state, &connector, &Playlist::new(files, false))?;
+            wallpaper.play(state, &connector, &Playlist::new(files, *random))?;
 
             Ok(serde_json::json!(true))
         }

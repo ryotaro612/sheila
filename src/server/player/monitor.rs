@@ -21,6 +21,16 @@ pub(crate) fn detect_gdk_monitor(connector: &Option<String>) -> Result<gdk4::Mon
     }
 }
 
+pub(crate) fn detect_connectors() -> Result<Vec<String>, String> {
+    detect_gdk_monitors().map(|monitors| {
+        monitors
+            .iter()
+            .filter_map(|m| m.connector())
+            .map(|c| c.to_string())
+            .collect()
+    })
+}
+
 ///
 fn detect_gdk_monitors() -> Result<Vec<gdk4::Monitor>, String> {
     let display = detect_display()?;

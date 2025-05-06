@@ -58,9 +58,9 @@ pub(crate) struct PlayArgs {
     /// The name of a monitor to play a movie.
     #[arg(long)]
     pub(crate) monitor: Option<String>,
-    // ///
-    // #[arg(long)]
-    // pub(crate) random: bool,
+    ///
+    #[arg(long)]
+    pub(crate) random: bool,
 }
 
 #[derive(Debug, Args)]
@@ -156,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display_command_has_optional_monitor() {
+    fn test_play_command_has_optional_monitor() {
         let args = arrange(vec![
             "sheila",
             "--verbose",
@@ -173,6 +173,32 @@ mod tests {
             Commands::Client(client_args) => match client_args.command {
                 ClientSubCommands::Play(args) => {
                     assert_eq!(Some(String::from("eDP-1")), args.monitor);
+                }
+                _ => panic!("unexpected subcommand"),
+            },
+            _ => panic!("unexpected command"),
+        }
+
+        assert!(actual.verbose);
+    }
+
+    #[test]
+    fn test_play_accepts_random() {
+        let args = arrange(vec![
+            "sheila",
+            "--verbose",
+            "client",
+            "play",
+            "--random",
+            "movie.mp4",
+        ]);
+        // actual
+        let actual = parse(args).unwrap();
+
+        match actual.command {
+            Commands::Client(client_args) => match client_args.command {
+                ClientSubCommands::Play(args) => {
+                    assert!(args.random);
                 }
                 _ => panic!("unexpected subcommand"),
             },

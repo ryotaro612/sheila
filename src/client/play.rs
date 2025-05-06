@@ -27,7 +27,8 @@ pub(crate) fn play(
             "play",
             json!({
                 "files": files,
-                "monitor": args.monitor
+                "monitor": args.monitor,
+                "random": args.random
             }),
         )
         .map_err(|e| e.to_string())?;
@@ -55,11 +56,13 @@ mod display_tests {
         let args = parser::PlayArgs {
             files: vec!["/movie.mp4".to_string()],
             monitor: None,
+            random: false,
         };
         let mut cli = client::MockClient::new();
         let params = serde_json::json!({
             "files": args.files,
-            "monitor":serde_json::Value::Null
+            "monitor":serde_json::Value::Null,
+            "random": args.random
         });
 
         cli.expect_send()

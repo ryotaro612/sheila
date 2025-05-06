@@ -1,6 +1,6 @@
-use gtk4::Picture;
-
 use super::{playlist::Playlist, stream};
+use gtk4::Picture;
+use serde;
 use std::collections::HashMap;
 ///
 ///
@@ -20,6 +20,9 @@ impl State {
 
     pub(crate) fn set_app_running(&mut self, running: bool) {
         self.app_running = running;
+    }
+    pub(crate) fn is_app_running(&self) -> bool {
+        self.app_running
     }
 
     pub(crate) fn play_stream(&mut self, connector: &str) -> Result<(), String> {
@@ -61,4 +64,20 @@ impl State {
 
         self.playing.remove(connector);
     }
+
+    pub(crate) fn lookup_plying_movies(&self) -> Vec<PlayingMovie> {
+        self.playing
+            .iter()
+            .map(|(connector, stream)| PlayingMovie {
+                connector: connector.clone(),
+                file: stream.get_playing_file(),
+            })
+            .collect()
+    }
+}
+
+#[derive(serde::Serialize, Debug)]
+pub(crate) struct PlayingMovie {
+    connector: String,
+    file: String,
 }

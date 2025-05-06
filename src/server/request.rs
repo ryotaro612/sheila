@@ -96,17 +96,19 @@ impl PlayCommandDecoder for JsonRpcRequest {
         if files.is_empty() {
             return Err("files is empty.".to_string());
         }
-
-        match params.get("monitor") {
-            Some(serde_json::Value::String(s)) => Ok(command::Command::Play {
-                files,
-                monitor: Some(s.to_string()),
-            }),
-            _ => Ok(command::Command::Play {
-                files,
-                monitor: None,
-            }),
-        }
+        let monitor = match params.get("monitor") {
+            Some(serde_json::Value::String(s)) => Some(s.to_string()),
+            _ => None,
+        };
+        let random = match params.get("random") {
+            Some(serde_json::Value::Bool(b)) => *b,
+            _ => false,
+        };
+        Ok(command::Command::Play {
+            files,
+            monitor,
+            random,
+        })
     }
 }
 
